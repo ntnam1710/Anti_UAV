@@ -1,0 +1,30 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Checkpoints and large weights (> 100MB)
+# Tracked via Git LFS or downloaded via Kaggle CLI
+weights/*.keras
+weights/*.h5
+!weights/README.md
+!weights/download_weights.py
+
+# Outputs and caches
+outputs/
+temp_downloads/
+*.avi
+*_raw.mp4
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# Virtual environments
+env/
+venv/
+.venv/
+
+# OS specific files
+.DS_Store
+Thumbs.db
