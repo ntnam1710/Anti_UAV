@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Kaggle Dataset](https://img.shields.io/badge/Kaggle%20Dataset-anti--uav--rgb-20BEFF?logo=kaggle&logoColor=white)](https://www.kaggle.com/datasets/namnguyen171006/anti-uav-rgb)
 [![Pretrained Weights](https://img.shields.io/badge/Kaggle%20Model-uav--checkpoint-orange?logo=kaggle&logoColor=white)](https://www.kaggle.com/datasets/namnguyen171006/uav-checkpoint)
-[![Inference Speed](https://img.shields.io/badge/Inference-38.5%2B%20FPS%20(P100)-success)](https://github.com)
+[![Inference Speed](https://img.shields.io/badge/Inference-21.4%20FPS%20(GPU)-success)](https://github.com)
 
 ---
 
@@ -34,40 +34,40 @@ Dự án này xây dựng một giải pháp hoàn chỉnh dựa trên mạng **
 * **Cấu trúc đặc trưng P2-FPN kết hợp Coordinate Attention**: Mở rộng Features Pyramid Network xuống mức độ phân giải cao P2 (stride 8, kích thước bản đồ đặc trưng $80 \times 80$) kết hợp với cơ chế chú ý toạ độ (Coordinate Attention) theo 2 hướng ngang và dọc, bảo toàn tối đa thông tin vị trí của các vật thể siêu nhỏ ($< 32^2\text{px}$).
 * **Khắc phục triệt để hiện tượng Dying ReLU trong nhánh kích thước**: Thay thế hàm kích hoạt ReLU bằng hàm **Sigmoid kết hợp khởi tạo Logit Prior Bias** ($b_0 = -2.66 \implies \sigma(b_0) \approx 0.065$). Kỹ thuật này loại bỏ hoàn toàn vùng gradient bằng 0, đảm bảo đạo hàm luôn dương và mạng hội tụ mượt mà ngay từ epoch đầu tiên.
 * **Bộ lọc quán tính quỹ đạo EMA**: Tích hợp thuật toán lọc quán tính Trajectory Exponential Moving Average (EMA) giúp duy trì bám bắt liên tục và chuyển sang trạng thái `OCCLUDED` khi drone bị che khuất ngắn hạn.
-* **Tốc độ suy luận thời gian thực không cần NMS**: Sử dụng cơ chế phát hiện đỉnh cực đại địa phương MaxPool $3 \times 3$ thay thế thuật toán Non-Maximum Suppression (NMS), đạt tốc độ **38.5+ FPS** trên GPU NVIDIA Tesla P100.
+* **Tốc độ suy luận thời gian thực không cần NMS**: Sử dụng cơ chế phát hiện đỉnh cực đại địa phương MaxPool $3 \times 3$ thay thế thuật toán Non-Maximum Suppression (NMS), đạt tốc độ **21.4 FPS** trên GPU.
 
 ---
 
 ## 2. Video Trải Nghiệm Tác Chiến Thực Tế (Benchmark Demo Videos)
 
-Mô hình được kiểm chứng thực nghiệm độc lập trên tập kiểm thử (Anti-UAV Test Set). Dưới đây là 6 video clip đại diện được phân bổ đồng đều theo **3 phân khúc kích thước Drone** (Small, Medium, Large) nhằm thể hiện năng lực phát hiện nhạy bén và duy trì bám bắt ổn định qua bộ lọc quán tính `Trajectory EMA Filter`:
+Mô hình được kiểm chứng thực nghiệm độc lập trên tập kiểm thử (Anti-UAV Test Set). Dưới đây là 6 chuỗi video tiêu biểu được trình diễn dưới dạng **ảnh động GIF trực quan hóa quỹ đạo bám bắt** theo **3 phân khúc kích thước Drone** (Small, Medium, Large) nhằm thể hiện năng lực phát hiện nhạy bén và duy trì bám bắt ổn định qua bộ lọc quán tính `Trajectory EMA Filter`:
 
 ### 2.1. Phân Khúc 1: Drone Nhỏ (Small / Tiny Scale - Diện Tích < 32² px)
 Thử thách khắt khe nhất trong phòng không quang học tầm thấp: Drone ở cự ly xa có kích thước chỉ từ vài pixel đến vài chục pixel, dễ bị lẫn vào nhiễu nền phức tạp hoặc chuyển động mây trời.
 
 | Demo 1 (Sequence `test_054`) | Demo 2 (Sequence `test_055`) |
 | :---: | :---: |
-| [![Demo Small 1](assets/demo_videos/thumbs/test_demo_small_1_test_054.jpg)](assets/demo_videos/test_demo_small_1_test_054.mp4) | [![Demo Small 2](assets/demo_videos/thumbs/test_demo_small_2_test_055.jpg)](assets/demo_videos/test_demo_small_2_test_055.mp4) |
-| [Xem Video test_054 (MP4)](assets/demo_videos/test_demo_small_1_test_054.mp4) | [Xem Video test_055 (MP4)](assets/demo_videos/test_demo_small_2_test_055.mp4) |
-| *Bám bắt drone siêu nhỏ trên nền quang học phức tạp; tự động chuyển sang trạng thái OCCLUDED khi mục tiêu bị che khuất tạm thời.* | *Theo dõi drone nhỏ cơ động đổi hướng nhanh; bộ lọc Trajectory EMA duy trì hộp bao ổn định, không rung giật.* |
+| [![Demo Small 1](assets/demo_videos/test_demo_small_1_test_054.gif)](assets/demo_videos/test_demo_small_1_test_054.mp4) | [![Demo Small 2](assets/demo_videos/test_demo_small_2_test_055.gif)](assets/demo_videos/test_demo_small_2_test_055.mp4) |
+| [Tải Video gốc test_054 (MP4)](assets/demo_videos/test_demo_small_1_test_054.mp4) | [Tải Video gốc test_055 (MP4)](assets/demo_videos/test_demo_small_2_test_055.mp4) |
+| *Ảnh động GIF: Bám bắt drone siêu nhỏ trên nền quang học phức tạp; tự động chuyển sang trạng thái OCCLUDED khi mục tiêu bị che khuất tạm thời.* | *Ảnh động GIF: Theo dõi drone nhỏ cơ động đổi hướng nhanh; bộ lọc Trajectory EMA duy trì hộp bao ổn định, không rung giật.* |
 
 ### 2.2. Phân Khúc 2: Drone Trung Bình (Medium Scale - 32² ≤ Diện Tích < 96² px)
 Cự ly chiến thuật tầm trung, mục tiêu bay lượn và thay đổi liên tục góc quan sát trên nền trời và đường chân trời.
 
 | Demo 1 (Sequence `test_051`) | Demo 2 (Sequence `test_049`) |
 | :---: | :---: |
-| [![Demo Medium 1](assets/demo_videos/thumbs/test_demo_medium_1_test_051.jpg)](assets/demo_videos/test_demo_medium_1_test_051.mp4) | [![Demo Medium 2](assets/demo_videos/thumbs/test_demo_medium_2_test_049.jpg)](assets/demo_videos/test_demo_medium_2_test_049.mp4) |
-| [Xem Video test_051 (MP4)](assets/demo_videos/test_demo_medium_1_test_051.mp4) | [Xem Video test_049 (MP4)](assets/demo_videos/test_demo_medium_2_test_049.mp4) |
-| *Bám bắt liên tục với độ tin cậy cao (> 90%), tốc độ xử lý thời gian thực 38.5+ FPS mượt mà.* | *Bám bắt quỹ đạo đổi hướng liên tục; giữ vững tâm ngắm và ước lượng vector vận tốc tức thời chính xác.* |
+| [![Demo Medium 1](assets/demo_videos/test_demo_medium_1_test_051.gif)](assets/demo_videos/test_demo_medium_1_test_051.mp4) | [![Demo Medium 2](assets/demo_videos/test_demo_medium_2_test_049.gif)](assets/demo_videos/test_demo_medium_2_test_049.mp4) |
+| [Tải Video gốc test_051 (MP4)](assets/demo_videos/test_demo_medium_1_test_051.mp4) | [Tải Video gốc test_049 (MP4)](assets/demo_videos/test_demo_medium_2_test_049.mp4) |
+| *Ảnh động GIF: Bám bắt liên tục với độ tin cậy cao (> 90%), tốc độ xử lý thời gian thực 21.4 FPS mượt mà.* | *Ảnh động GIF: Bám bắt quỹ đạo đổi hướng liên tục; giữ vững tâm ngắm và ước lượng vector vận tốc tức thời chính xác.* |
 
 ### 2.3. Phân Khúc 3: Drone Lớn (Large Scale - Diện Tích ≥ 96² px)
 Cự ly gần, mục tiêu chiếm diện tích lớn, các chi tiết cấu trúc cánh quạt và khung thân rõ ràng.
 
 | Demo 1 (Sequence `test_074`) | Demo 2 (Sequence `test_075`) |
 | :---: | :---: |
-| [![Demo Large 1](assets/demo_videos/thumbs/test_demo_large_1_test_074.jpg)](assets/demo_videos/test_demo_large_1_test_074.mp4) | [![Demo Large 2](assets/demo_videos/thumbs/test_demo_large_2_test_075.jpg)](assets/demo_videos/test_demo_large_2_test_075.mp4) |
-| [Xem Video test_074 (MP4)](assets/demo_videos/test_demo_large_1_test_074.mp4) | [Xem Video test_075 (MP4)](assets/demo_videos/test_demo_large_2_test_075.mp4) |
-| *Bám sát đường nét drone kích thước lớn; nhánh Size Head và Offset Head dự đoán chính xác tuyệt đối kích thước hộp bao.* | *Kiểm nghiệm tính ổn định của giao diện Tactical HUD chuẩn ANTI-UAV RGB xuyên suốt toàn bộ chuỗi bay.* |
+| [![Demo Large 1](assets/demo_videos/test_demo_large_1_test_074.gif)](assets/demo_videos/test_demo_large_1_test_074.mp4) | [![Demo Large 2](assets/demo_videos/test_demo_large_2_test_075.gif)](assets/demo_videos/test_demo_large_2_test_075.mp4) |
+| [Tải Video gốc test_074 (MP4)](assets/demo_videos/test_demo_large_1_test_074.mp4) | [Tải Video gốc test_075 (MP4)](assets/demo_videos/test_demo_large_2_test_075.mp4) |
+| *Ảnh động GIF: Bám sát đường nét drone kích thước lớn; nhánh Size Head và Offset Head dự đoán chính xác tuyệt đối kích thước hộp bao.* | *Ảnh động GIF: Kiểm nghiệm tính ổn định của giao diện Tactical HUD chuẩn ANTI-UAV RGB xuyên suốt toàn bộ chuỗi bay.* |
 
 ---
 
@@ -187,26 +187,44 @@ Nhờ giá trị khởi tạo $b_0 = -2.66$, ngay tại bước lặp đầu ti�
 
 ---
 
-### 4.5. Hàm Loss
+### 4.5. Hàm Mất Mát (Multi-Task Loss Functions)
 
 Hàm mục tiêu tổng hợp của hệ thống gồm 3 thành phần Loss:
 
-$$\mathcal{L}_{\text{total}} = \lambda_{\text{hm}} \mathcal{L}_{\text{hm}} + \lambda_{\text{off}} \mathcal{L}_{\text{off}} + \lambda_{\text{size}} \mathcal{L}_{\text{size}}$$
+$$
+\mathcal{L}_{\text{total}} = \lambda_{\text{hm}} \mathcal{L}_{\text{hm}} + \lambda_{\text{off}} \mathcal{L}_{\text{off}} + \lambda_{\text{size}} \mathcal{L}_{\text{size}}
+$$
 
 Trong đó các trọng số chuẩn hoá là $\lambda_{\text{hm}} = 1.0, \lambda_{\text{off}} = 1.0, \lambda_{\text{size}} = 1.0$.
 
-1. **Gaussian Focal Loss có phạt giảm chấn cho lưới nhiệt**:
-$$\mathcal{L}_{\text{hm}} = -\frac{1}{N} \sum_{xy} \begin{cases} (1 - \hat{Y}_{xy})^\alpha \log(\hat{Y}_{xy}) & \text{if } Y_{xy} = 1 \\ (1 - Y_{xy})^\beta (\hat{Y}_{xy})^\alpha \log(1 - \hat{Y}_{xy}) & \text{else} \end{cases}$$
+#### 1. Gaussian Focal Loss có phạt giảm chấn cho lưới nhiệt:
+
+$$
+\mathcal{L}_{\text{hm}} = -\frac{1}{N} \sum_{xy} \begin{cases} 
+(1 - \hat{Y}_{xy})^\alpha \log(\hat{Y}_{xy}) & \text{if } Y_{xy} = 1 \\ 
+(1 - Y_{xy})^\beta (\hat{Y}_{xy})^\alpha \log(1 - \hat{Y}_{xy}) & \text{else} 
+\end{cases}
+$$
+
 *(Tham số thực nghiệm: $\alpha = 2, \beta = 4$)*
 
-2. **Masked L1 Loss cho sai số lượng tử hoá tâm**:
-$$\mathcal{L}_{\text{off}} = \frac{1}{N} \sum_{p} |\hat{o}_p - (p/R - \tilde{p})|$$
+#### 2. Masked L1 Loss cho sai số lượng tử hoá tâm:
 
-3. **Hàm mất mát kích thước kết hợp L1 và khoảng cách Wasserstein Gaussian Chuẩn hoá (NWD)**:
-$$\mathcal{L}_{\text{size}} = 5.0 \cdot \mathcal{L}_{1} + (1.0 - \text{NWD})$$
+$$
+\mathcal{L}_{\text{off}} = \frac{1}{N} \sum_{p} \left| \hat{o}_p - \left( \frac{p}{R} - \tilde{p} \right) \right|
+$$
+
+#### 3. Hàm mất mát kích thước kết hợp L1 và khoảng cách Wasserstein Gaussian Chuẩn hoá (NWD):
+
+$$
+\mathcal{L}_{\text{size}} = 5.0 \cdot \mathcal{L}_{1} + (1.0 - \text{NWD})
+$$
 
 Với khoảng cách Wasserstein giữa 2 mô hình phân phối Gaussian $\mathcal{N}_a, \mathcal{N}_b$ của 2 hộp bọc:
-$$\text{NWD}(\mathcal{N}_a, \mathcal{N}_b) = \exp\left(-\frac{\mathcal{W}_2(\mathcal{N}_a, \mathcal{N}_b)}{C}\right)$$
+
+$$
+\text{NWD}(\mathcal{N}_a, \mathcal{N}_b) = \exp\left( -\frac{\mathcal{W}_2(\mathcal{N}_a, \mathcal{N}_b)}{C} \right)
+$$
 
 Khoảng cách NWD duy trì độ mượt ngay cả khi 2 hộp bọc không giao nhau ($\text{IoU} = 0$), mang lại khả năng học kích thước vượt trội cho drone ở cự ly xa.
 
@@ -229,14 +247,22 @@ Mô hình được huấn luyện trong 9 epochs trên môi trường Kaggle s�
 | **09 (Tốt nhất)** | **0.3372** | **0.0425** | **0.0669** | **0.5959** | **0.1987** | **0.1189** | 76.1 |
 | **Mức độ giảm** | **-74.7%** | **-94.5%** | **-55.5%** | **-81.8%** | **-92.0%** | **-61.5%** | **Tổng: 11.4 giờ** |
 
-### Chỉ Số Đánh Giá Định Lượng Độc Lập (Tập Kiểm Thử Anti-UAV Test Set)
-* **Độ chính xác trung bình mAP@0.5**: **89.4%**
-* **Độ chính xác NWD-mAP@0.5 (Vật thể siêu nhỏ)**: **86.1%**
-* **Precision**: **91.2%**
-* **Recall**: **88.6%**
-* **F1-Score**: **89.9%**
-* **Sai số tâm trung bình**: **3.4 pixels**
-* **Tốc độ suy luận**: **38.5 FPS** (Tesla P100, batch_size=1)
+### Chỉ Số Đánh Giá Định Lượng Độc Lập (Tập Kiểm Thử Anti-UAV Test Set - Ngưỡng Conf ≥ 0.4)
+
+Mô hình được đánh giá định lượng độc lập trên **3.000 frames tiêu biểu** của tập kiểm thử Anti-UAV với ngưỡng tin cậy phân loại $\text{Confidence} \ge 0.4$:
+
+| Chỉ Số Đánh Giá (Metric) | Kết Quả Thực Nghiệm | Ý Nghĩa Kỹ Thuật / Phân Tích Thực Chiến |
+| :--- | :---: | :--- |
+| **Tổng số mẫu đánh giá** | **3.000 frames** | Tập mẫu tiêu biểu đại diện đầy đủ các phân khúc Drone |
+| **Ngưỡng tin cậy (Confidence)** | **$\ge 0.40$** | Bộ lọc xác suất tách biệt mục tiêu và nhiễu nền |
+| **Precision (Conf $\ge 0.4$)** | **99.85%** | Độ chuẩn xác cực cao, triệt tiêu gần như hoàn toàn cảnh báo giả ($0.15\%$) |
+| **Recall (Conf $\ge 0.4$)** | **69.12%** | Độ bao quát phát hiện mục tiêu trong các tình huống khó và che khuất |
+| **F1-Score** | **81.69%** | Điểm cân bằng tối ưu giữa độ chuẩn xác và độ bao quát |
+| **mAP@0.5 (IoU)** | **76.31%** | Độ chính xác trung bình tiêu chuẩn ở ngưỡng chồng lấn $\text{IoU} \ge 0.5$ |
+| **mAP@0.75 (IoU)** | **23.65%** | Độ chính xác ở ngưỡng định vị khắt khe $\text{IoU} \ge 0.75$ |
+| **NWD-mAP@0.5 (NWD)** | **63.84%** | Metric chuẩn hóa khoảng cách Gaussian Wasserstein chuyên biệt cho Drone nhỏ |
+| **Sai số tâm (Center Error)** | **4.17 pixels** | Sai số tâm trung bình trên toàn khung hình $1920 \times 1080$ |
+| **Tốc độ suy luận (Inference)** | **21.4 FPS** | Tốc độ xử lý thời gian thực trên GPU (hoàn tất 3.000 frames trong 2.34 phút) |
 
 ---
 
@@ -293,14 +319,19 @@ Mô hình được huấn luyện trong 9 epochs trên môi trường Kaggle s�
 ├── report_anti_uav_centernet.pdf  # Báo cáo khoa học đã biên dịch (19 trang đầy đủ hình ảnh)
 │
 ├── assets/                        # Toàn bộ hình ảnh khoa học, biểu đồ và video thử nghiệm
-│   ├── demo_videos/               # 6 video demo tác chiến theo 3 phân khúc kích thước drone
-│   │   ├── test_demo_small_1_test_054.mp4   # Demo Drone Nhỏ 1 (Sequence test_054)
-│   │   ├── test_demo_small_2_test_055.mp4   # Demo Drone Nhỏ 2 (Sequence test_055)
-│   │   ├── test_demo_medium_1_test_051.mp4  # Demo Drone Trung Bình 1 (Sequence test_051)
-│   │   ├── test_demo_medium_2_test_049.mp4  # Demo Drone Trung Bình 2 (Sequence test_049)
-│   │   ├── test_demo_large_1_test_074.mp4   # Demo Drone Lớn 1 (Sequence test_074)
-│   │   ├── test_demo_large_2_test_075.mp4   # Demo Drone Lớn 2 (Sequence test_075)
-│   │   └── thumbs/                # Ảnh xem trước (thumbnails) cho từng video demo
+│   ├── demo_videos/               # 6 video demo tác chiến (kèm ảnh động GIF và video MP4)
+│   │   ├── test_demo_small_1_test_054.gif   # Ảnh động GIF Drone Nhỏ 1 (Sequence test_054)
+│   │   ├── test_demo_small_1_test_054.mp4   # Video gốc Drone Nhỏ 1
+│   │   ├── test_demo_small_2_test_055.gif   # Ảnh động GIF Drone Nhỏ 2 (Sequence test_055)
+│   │   ├── test_demo_small_2_test_055.mp4   # Video gốc Drone Nhỏ 2
+│   │   ├── test_demo_medium_1_test_051.gif  # Ảnh động GIF Drone Trung Bình 1 (Sequence test_051)
+│   │   ├── test_demo_medium_1_test_051.mp4  # Video gốc Drone Trung Bình 1
+│   │   ├── test_demo_medium_2_test_049.gif  # Ảnh động GIF Drone Trung Bình 2 (Sequence test_049)
+│   │   ├── test_demo_medium_2_test_049.mp4  # Video gốc Drone Trung Bình 2
+│   │   ├── test_demo_large_1_test_074.gif   # Ảnh động GIF Drone Lớn 1 (Sequence test_074)
+│   │   ├── test_demo_large_1_test_074.mp4   # Video gốc Drone Lớn 1
+│   │   ├── test_demo_large_2_test_075.gif   # Ảnh động GIF Drone Lớn 2 (Sequence test_075)
+│   │   └── test_demo_large_2_test_075.mp4   # Video gốc Drone Lớn 2
 │   ├── model_architecture.jpg     # Sơ đồ kiến trúc tổng thể
 │   ├── FPN.jpg                    # Cấu trúc kim tự tháp đặc trưng P2-FPN
 │   ├── comparison.jpg             # So sánh SE-Net vs Coordinate Attention
