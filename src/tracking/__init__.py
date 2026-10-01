@@ -1,9 +1,10 @@
-# -*- coding: utf-8 -*-
 from .ema_tracker import TrajectoryEMAFilter
-from .hud_renderer import draw_hud_reticle, create_tactical_canvas
+from .renderer import draw_reticle, create_canvas, draw_hud_reticle, create_tactical_canvas
 
 __all__ = [
     "TrajectoryEMAFilter",
+    "draw_reticle",
+    "create_canvas",
     "draw_hud_reticle",
-    "create_tactical_canvas"
+    "create_tactical_canvas",
 ]

@@ -1,17 +1,17 @@
-# -*- coding: utf-8 -*-
-"""
-Trajectory Exponential Moving Average (EMA) Filter for Temporal Stability
-"""
-import numpy as np
+#trajectory exponential moving averafe (EMA) 
+
+import numpy as np 
 
 class TrajectoryEMAFilter:
     """
-    Trajectory Exponential Moving Average (EMA) Filter:
-    - Smooths bounding box jitter across consecutive video frames
-    - Predicts inertial trajectory during brief occlusions or missed detections (up to max_missing frames)
-    - Estimates instantaneous velocity in pixels/frame
+    giam thieu rung lac(filter) cua bounding box giua cac frame
+    du dao quy dao quan tinh khi ma drone bi che khuat tam thoi 
     """
-    def __init__(self, alpha=0.6, max_missing=15):
+    def __init__(self, alpha=0.6,max_missing=15):
+        """
+        alpha(float): he so lam muot trong so frame hien tai
+        max_missing(int): so frame toi da duy tri de bam duoi theo quan tinh truoc khi chuyeng sang trang thai Lost
+        """
         self.alpha = alpha
         self.max_missing = max_missing
         self.smooth_box = None
@@ -21,11 +21,10 @@ class TrajectoryEMAFilter:
 
     def update(self, detected_box, is_detected):
         """
-        Updates filter state with detected bounding box [xmin, ymin, xmax, ymax] or missing status.
-        Returns:
-            smooth_box: np.ndarray [4] or None
-            state: "DETECTED" | "TRACKED_EMA" | "LOST"
-            speed: float velocity magnitude in pixels/frame
+        cap nhat trang thai bo loc voi bounding box phat dien duoc [xmin, ymin, xmax, ymax]
+        smooth_box: np.ndarray[4] or None
+        state: "DETECTED | LOST"
+        speed(float): do lon van toc tuc thi (pixel/frame)
         """
         if is_detected and detected_box is not None:
             cur_box = np.array(detected_box, dtype=np.float32)
@@ -38,20 +37,23 @@ class TrajectoryEMAFilter:
             else:
                 prev_cx = (self.smooth_box[0] + self.smooth_box[2]) / 2.0
                 prev_cy = (self.smooth_box[1] + self.smooth_box[3]) / 2.0
-                self.velocity = 0.6 * self.velocity + 0.4 * np.array([cur_cx - prev_cx, cur_cy - prev_cy])
-                self.smooth_box = self.alpha * cur_box + (1.0 - self.alpha) * self.smooth_box
+                #cap nhat van toc di chuyen tuc thoi qua bo loc trung binh dong
+                self.velocity = self.alpha * self.velocity + 0.4 * np.array([cur_cx - prev_cx, cur_cy - prev_cy])
+                #lam muot bounding box
+                self.smooth_box = self.alpha * cur_box + (1 - self.alpha) * self.smooth_box
 
             self.missing_count = 0
             self.is_active = True
             return self.smooth_box.copy(), "DETECTED", float(np.linalg.norm(self.velocity))
         else:
+            #du bao quan tinh vi tri tiep theo khi mat dau tam thoi
             if self.is_active and self.missing_count < self.max_missing:
                 self.missing_count += 1
                 self.smooth_box[0] += self.velocity[0]
-                self.smooth_box[2] += self.velocity[0]
                 self.smooth_box[1] += self.velocity[1]
+                self.smooth_box[2] += self.velocity[0]
                 self.smooth_box[3] += self.velocity[1]
-                return self.smooth_box.copy(), "TRACKED_EMA", float(np.linalg.norm(self.velocity))
+                return self.smooth_box.copy(), "OCCLUDED", float(np.linalg.norm(self.velocity))
             else:
                 self.is_active = False
                 self.smooth_box = None

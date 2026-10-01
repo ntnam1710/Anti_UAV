@@ -1,8 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Quantitative Evaluation Script for Anti-UAV CenterNet RGB
-Metrics: Precision, Recall, F1, mAP@0.5, mAP@0.75, COCO mAP, NWD-mAP@0.5, Center Error (px), FPS
-"""
+#danh gia
 import os
 import sys
 import argparse
@@ -14,7 +10,6 @@ import tensorflow as tf
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-# Ensure UTF-8 stdout/stderr encoding on Windows
 if hasattr(sys.stdout, "reconfigure"):
     try:
         sys.stdout.reconfigure(encoding="utf-8")
@@ -23,10 +18,10 @@ if hasattr(sys.stdout, "reconfigure"):
         pass
 
 from src.config import Config
-from src.models import build_detection_model, decode_detections
+from src.models import build_detection_model, load_trained_model, decode_detections
 from src.utils.metrics import compute_iou, compute_nwd, compute_ap
 
-# Hardware Memory Growth
+#cau hinh gpu
 gpus = tf.config.list_physical_devices("GPU")
 if gpus:
     for gpu in gpus:
@@ -36,14 +31,16 @@ if gpus:
             pass
 
 def decode_and_resize_eval(file_path, channels=3, target_size=(640, 640)):
+    """Đọc ảnh từ đĩa, thay đổi kích thước và chuẩn hóa phục vụ đánh giá."""
     img_raw = tf.io.read_file(file_path)
     img = tf.io.decode_jpeg(img_raw, channels=channels, ratio=2)
     img = tf.image.resize(img, target_size, method="bilinear")
     return tf.cast(img, tf.float32) / 255.0
 
 def create_eval_dataset(csv_path, voc_root, batch_size=8, target_size=(640, 640), stride=1, max_samples=None):
+    """Xây dựng tf.data.Dataset cho tập kiểm thử với hỗ trợ lấy mẫu theo chu kỳ (stride) và giới hạn số lượng mẫu."""
     if not os.path.exists(csv_path):
-        raise FileNotFoundError(f"CSV not found: {csv_path}")
+        raise FileNotFoundError(f"Khong tim thay tep CSV: {csv_path}")
 
     df = pd.read_csv(csv_path)
     orig_total = len(df)
@@ -55,7 +52,7 @@ def create_eval_dataset(csv_path, voc_root, batch_size=8, target_size=(640, 640)
         df = df.iloc[indices].reset_index(drop=True)
 
     total_samples = len(df)
-    print(f"   + Total available samples: {orig_total} | Evaluation subset: {total_samples} samples (Stride: {stride}) | Batch: {batch_size}")
+    print(f"   + Tong so mau co san: {orig_total} | Tap danh gia: {total_samples} mau (Stride: {stride}) | Batch: {batch_size}")
 
     orig_w, orig_h = 1920.0, 1080.0
 
@@ -105,18 +102,18 @@ def create_eval_dataset(csv_path, voc_root, batch_size=8, target_size=(640, 640)
     return ds, total_samples
 
 def evaluate(voc_root, csv_path, checkpoint_path, output_dir="assets",
-             batch_size=8, conf_thresh=0.20, stride=5, max_samples=3000):
+             batch_size=8, conf_thresh=0.40, stride=5, max_samples=3000):
+    """Thực hiện toàn bộ quy trình kiểm thử và vẽ đồ thị Precision-Recall Curve."""
     os.makedirs(output_dir, exist_ok=True)
     print("=" * 70)
-    print(" STARTING QUANTITATIVE BENCHMARK EVALUATION (RGB-ONLY)")
-    print(f" Weights     : {checkpoint_path}")
-    print(f" Test CSV    : {csv_path}")
-    print(f" Batch Size  : {batch_size}")
-    print(f" Conf Thresh : {conf_thresh}")
+    print(" BAT DAU DANH GIA HIEN NANG DINH LUONG (RGB-ONLY)")
+    print(f" Trong so       : {checkpoint_path}")
+    print(f" CSV kiem thu   : {csv_path}")
+    print(f" Kich thuoc lo  : {batch_size}")
+    print(f" Nguong tin cay : {conf_thresh}")
     print("=" * 70)
 
-    model = build_detection_model(input_shape=Config.INPUT_SHAPE, fpn_dim=Config.FPN_DIM)
-    model.load_weights(checkpoint_path)
+    model = load_trained_model(checkpoint_path, input_shape=Config.INPUT_SHAPE, fpn_dim=Config.FPN_DIM)
 
     eval_ds, n_eval = create_eval_dataset(
         csv_path, voc_root, batch_size=batch_size,
@@ -138,8 +135,8 @@ def evaluate(voc_root, csv_path, checkpoint_path, output_dir="assets",
         preds = model(x, training=False)
         return decode_detections(preds["heatmap"], preds["offset"], preds["size"])
 
-    print("\n>> Running model inference over test batches...")
-    for x_b, y_b in tqdm(eval_ds, total=int(np.ceil(n_eval / batch_size))):
+    print("\n[INFO] Dang thuc hien suy luan tren tap kiem thu...")
+    for x_b, y_b in tqdm(eval_ds, total=int(np.ceil(n_eval / batch_size)), desc="Kiem thu"):
         t_start = time.time()
         scores, pred_bboxes = predict_step(x_b)
         elapsed = time.time() - t_start
@@ -182,7 +179,7 @@ def evaluate(voc_root, csv_path, checkpoint_path, output_dir="assets",
 
     fps = total_frames / max(1e-5, total_inference_time)
 
-    # Compute Metrics
+    # Tính toán các chỉ số thống kê
     ap50, rec_arr, prec_arr = compute_ap(y_true_cls, y_scores, matches_iou50)
     ap75, _, _ = compute_ap(y_true_cls, y_scores, matches_iou75)
     nwd_ap, _, _ = compute_ap(y_true_cls, y_scores, matches_nwd50)
@@ -198,41 +195,41 @@ def evaluate(voc_root, csv_path, checkpoint_path, output_dir="assets",
     mean_err_px = np.mean(center_errors_px) if len(center_errors_px) > 0 else 0.0
 
     print("\n" + "=" * 70)
-    print(" 📊 ANTI-UAV BENCHMARK RESULTS")
+    print(" KET QUA DANH GIA BENCHMARK ANTI-UAV")
     print("=" * 70)
-    print(f" Precision (IoU >= 0.5)      : {precision * 100:.2f} %")
-    print(f" Recall (IoU >= 0.5)         : {recall * 100:.2f} %")
-    print(f" F1-Score                    : {f1 * 100:.2f} %")
-    print(f" mAP@0.5                     : {ap50 * 100:.2f} %")
-    print(f" mAP@0.75                    : {ap75 * 100:.2f} %")
-    print(f" NWD-mAP@0.5 (Tiny Object)   : {nwd_ap * 100:.2f} %")
-    print(f" Mean Center Error           : {mean_err_px:.1f} pixels")
-    print(f" Inference Speed             : {fps:.1f} FPS")
+    print(f" Do chinh xac (Precision IoU >= 0.5) : {precision * 100:.2f} %")
+    print(f" Do thu hoi (Recall IoU >= 0.5)      : {recall * 100:.2f} %")
+    print(f" Diem F1-Score                       : {f1 * 100:.2f} %")
+    print(f" mAP@0.5                             : {ap50 * 100:.2f} %")
+    print(f" mAP@0.75                            : {ap75 * 100:.2f} %")
+    print(f" NWD-mAP@0.5 (Doi tuong sieu nho)    : {nwd_ap * 100:.2f} %")
+    print(f" Sai so tam trung binh (Center Error): {mean_err_px:.1f} pixels")
+    print(f" Toc do suy luan (Inference Speed)   : {fps:.1f} FPS")
     print("=" * 70)
 
-    # Plot PR Curve
+    # Vẽ và lưu đồ thị đường cong Precision-Recall
     plt.figure(figsize=(7, 5), dpi=300)
     plt.plot(rec_arr, prec_arr, color="#1f77b4", linewidth=2.5, label=f"CenterNet RGB (mAP@0.5 = {ap50*100:.1f}%)")
     plt.xlabel("Recall", fontsize=11, fontweight="bold")
     plt.ylabel("Precision", fontsize=11, fontweight="bold")
-    plt.title("Precision-Recall Curve (Anti-UAV Test Set)", fontsize=12, fontweight="bold")
+    plt.title("Duong cong Precision-Recall (Tap kiem thu Anti-UAV)", fontsize=12, fontweight="bold")
     plt.grid(True, linestyle=":", alpha=0.6)
     plt.legend(fontsize=10)
     pr_path = os.path.join(output_dir, "pr_curve.png")
     plt.savefig(pr_path, bbox_inches="tight")
     plt.close()
-    print(f">> PR curve saved to: {pr_path}")
+    print(f"[HOAN TAT] Do thi PR Curve da duoc luu tai: {pr_path}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--voc_root", type=str, required=True)
-    parser.add_argument("--csv_path", type=str, required=True)
-    parser.add_argument("--checkpoint", type=str, default=Config.DEFAULT_CHECKPOINT)
-    parser.add_argument("--output_dir", type=str, default="assets")
-    parser.add_argument("--batch_size", type=int, default=8)
-    parser.add_argument("--conf_thresh", type=float, default=0.20)
-    parser.add_argument("--stride", type=int, default=5)
-    parser.add_argument("--max_samples", type=int, default=3000)
+    parser = argparse.ArgumentParser(description="Danh gia dinh luong CenterNet RGB")
+    parser.add_argument("--voc_root", type=str, required=True, help="Thu muc goc dataset VOC")
+    parser.add_argument("--csv_path", type=str, required=True, help="Tep CSV kiem thu")
+    parser.add_argument("--checkpoint", type=str, default=Config.DEFAULT_CHECKPOINT, help="Duong dan checkpoint")
+    parser.add_argument("--output_dir", type=str, default="assets", help="Thu muc xuat ket qua")
+    parser.add_argument("--batch_size", type=int, default=8, help="Kich thuoc lo")
+    parser.add_argument("--conf_thresh", type=float, default=0.40, help="Nguong tin cay")
+    parser.add_argument("--stride", type=int, default=5, help="Buoc lay mau khung hinh")
+    parser.add_argument("--max_samples", type=int, default=3000, help="So mau kiem thu toi da")
     args = parser.parse_args()
 
     evaluate(

@@ -11,15 +11,16 @@
 
 ## Mục Lục
 1. [Tổng Quan và Đóng Góp Chính](#1-tổng-quan-và-đóng-góp-chính)
-2. [Kiến Trúc Mạng và Các Điểm Cải Tiến Cốt Lõi](#2-kiến-trúc-mạng-và-các-điểm-cải-tiến-cốt-lõi)
-3. [Cơ Sở Toán Học và Công Thức Thuật Toán](#3-cơ-sở-toán-học-và-công-thức-thuật-toán)
-4. [Kết Quả Thực Nghiệm và Quá Trình Hội Tụ Huấn Luyện](#4-kết-quả-thực-nghiệm-và-quá-trình-hội-tụ-huấn-luyện)
-5. [Bộ Sưu Tập Hình Ảnh Khoa Học](#5-bộ-sưu-tập-hình-ảnh-khoa-học)
-6. [Dữ Liệu và Trọng Số Huấn Luyện Sẵn](#6-dữ-liệu-và-trọng-số-huấn-luyện-sẵn)
-7. [Cấu Trúc Thư Mục Dự Án](#7-cấu-trúc-thư-mục-dự-án)
-8. [Hướng Dẫn Cài Đặt và Khởi Chạy Nhanh](#8-hướng-dẫn-cài-đặt-và-khởi-chạy-nhanh)
-9. [Hướng Dẫn Sử Dụng Giao Diện Dòng Lệnh (CLI)](#9-hướng-dẫn-sử-dụng-giao-diện-dòng-lệnh-cli)
-10. [Giấy Phép và Tài Liệu Tham Khảo](#10-giấy-phép-và-tài-liệu-tham-khảo)
+2. [Video Trải Nghiệm Tác Chiến Thực Tế (Benchmark Demo Videos)](#2-video-trải-nghiệm-tác-chiến-thực-tế-benchmark-demo-videos)
+3. [Kiến Trúc Mạng và Các Điểm Cải Tiến Cốt Lõi](#3-kiến-trúc-mạng-và-các-điểm-cải-tiến-cốt-lõi)
+4. [Cơ Sở Toán Học và Công Thức Thuật Toán](#4-cơ-sở-toán-học-và-công-thức-thuật-toán)
+5. [Kết Quả Thực Nghiệm và Quá Trình Hội Tụ Huấn Luyện](#5-kết-quả-thực-nghiệm-và-quá-trình-hội-tụ-huấn-luyện)
+6. [Bộ Sưu Tập Hình Ảnh Khoa Học](#6-bộ-sưu-tập-hình-ảnh-khoa-học)
+7. [Dữ Liệu và Trọng Số Huấn Luyện Sẵn](#7-dữ-liệu-và-trọng-số-huấn-luyện-sẵn)
+8. [Cấu Trúc Thư Mục Dự Án](#8-cấu-trúc-thư-mục-dự-án)
+9. [Hướng Dẫn Cài Đặt và Khởi Chạy Nhanh](#9-hướng-dẫn-cài-đặt-và-khởi-chạy-nhanh)
+10. [Hướng Dẫn Sử Dụng Giao Diện Dòng Lệnh (CLI)](#10-hướng-dẫn-sử-dụng-giao-diện-dòng-lệnh-cli)
+11. [Giấy Phép và Tài Liệu Tham Khảo](#11-giấy-phép-và-tài-liệu-tham-khảo)
 
 ---
 
@@ -30,17 +31,49 @@ Nhiệm vụ phát hiện và bám bắt các phương tiện bay không ngườ
 Dự án này xây dựng một giải pháp hoàn chỉnh dựa trên mạng **Anchor-Free CenterNet chỉ sử dụng luồng ảnh Visible RGB** với các kỹ thuật cốt lõi:
 
 * **Ghép chuỗi thời gian 3 thời điểm (9 kênh RGB)**: Xây dựng tensor đầu vào $X_{\text{temporal}} = [I_{t-\Delta t}, I_t, I_{t+\Delta t}] \in \mathbb{R}^{640 \times 640 \times 9}$, cho phép các tầng tích chập trích xuất trực tiếp vận tốc và hướng chuyển động của drone mà không cần mạng luồng quang học (Optical Flow) hay mạng hồi quy tuần hoàn (RNN/LSTM) nặng nề.
-* **Cấu trúc đặc trưng P2-FPN kết hợp Coordinate Attention**: Mở rộng tầng cấu trúc xuống mức độ phân giải cao P2 (stride 8, kích thước bản đồ đặc trưng $80 \times 80$) kết hợp với cơ chế chú ý toạ độ (Coordinate Attention) theo 2 hướng ngang và dọc, bảo toàn tối đa thông tin vị trí của các vật thể siêu nhỏ ($< 32^2\text{px}$).
+* **Cấu trúc đặc trưng P2-FPN kết hợp Coordinate Attention**: Mở rộng Features Pyramid Network xuống mức độ phân giải cao P2 (stride 8, kích thước bản đồ đặc trưng $80 \times 80$) kết hợp với cơ chế chú ý toạ độ (Coordinate Attention) theo 2 hướng ngang và dọc, bảo toàn tối đa thông tin vị trí của các vật thể siêu nhỏ ($< 32^2\text{px}$).
 * **Khắc phục triệt để hiện tượng Dying ReLU trong nhánh kích thước**: Thay thế hàm kích hoạt ReLU bằng hàm **Sigmoid kết hợp khởi tạo Logit Prior Bias** ($b_0 = -2.66 \implies \sigma(b_0) \approx 0.065$). Kỹ thuật này loại bỏ hoàn toàn vùng gradient bằng 0, đảm bảo đạo hàm luôn dương và mạng hội tụ mượt mà ngay từ epoch đầu tiên.
-* **Bộ lọc quán tính quỹ đạo EMA**: Tích hợp thuật toán lọc quán tính Trajectory Exponential Moving Average (EMA) giúp duy trì bám bắt liên tục khi drone bị che khuất ngắn hạn.
+* **Bộ lọc quán tính quỹ đạo EMA**: Tích hợp thuật toán lọc quán tính Trajectory Exponential Moving Average (EMA) giúp duy trì bám bắt liên tục và chuyển sang trạng thái `OCCLUDED` khi drone bị che khuất ngắn hạn.
 * **Tốc độ suy luận thời gian thực không cần NMS**: Sử dụng cơ chế phát hiện đỉnh cực đại địa phương MaxPool $3 \times 3$ thay thế thuật toán Non-Maximum Suppression (NMS), đạt tốc độ **38.5+ FPS** trên GPU NVIDIA Tesla P100.
 
 ---
 
-## 2. Kiến Trúc Mạng và Các Điểm Cải Tiến Cốt Lõi
+## 2. Video Trải Nghiệm Tác Chiến Thực Tế (Benchmark Demo Videos)
+
+Mô hình được kiểm chứng thực nghiệm độc lập trên tập kiểm thử (Anti-UAV Test Set). Dưới đây là 6 video clip đại diện được phân bổ đồng đều theo **3 phân khúc kích thước Drone** (Small, Medium, Large) nhằm thể hiện năng lực phát hiện nhạy bén và duy trì bám bắt ổn định qua bộ lọc quán tính `Trajectory EMA Filter`:
+
+### 2.1. Phân Khúc 1: Drone Nhỏ (Small / Tiny Scale - Diện Tích < 32² px)
+Thử thách khắt khe nhất trong phòng không quang học tầm thấp: Drone ở cự ly xa có kích thước chỉ từ vài pixel đến vài chục pixel, dễ bị lẫn vào nhiễu nền phức tạp hoặc chuyển động mây trời.
+
+| Demo 1 (Sequence `test_054`) | Demo 2 (Sequence `test_055`) |
+| :---: | :---: |
+| [![Demo Small 1](assets/demo_videos/thumbs/test_demo_small_1_test_054.jpg)](assets/demo_videos/test_demo_small_1_test_054.mp4) | [![Demo Small 2](assets/demo_videos/thumbs/test_demo_small_2_test_055.jpg)](assets/demo_videos/test_demo_small_2_test_055.mp4) |
+| [Xem Video test_054 (MP4)](assets/demo_videos/test_demo_small_1_test_054.mp4) | [Xem Video test_055 (MP4)](assets/demo_videos/test_demo_small_2_test_055.mp4) |
+| *Bám bắt drone siêu nhỏ trên nền quang học phức tạp; tự động chuyển sang trạng thái OCCLUDED khi mục tiêu bị che khuất tạm thời.* | *Theo dõi drone nhỏ cơ động đổi hướng nhanh; bộ lọc Trajectory EMA duy trì hộp bao ổn định, không rung giật.* |
+
+### 2.2. Phân Khúc 2: Drone Trung Bình (Medium Scale - 32² ≤ Diện Tích < 96² px)
+Cự ly chiến thuật tầm trung, mục tiêu bay lượn và thay đổi liên tục góc quan sát trên nền trời và đường chân trời.
+
+| Demo 1 (Sequence `test_051`) | Demo 2 (Sequence `test_049`) |
+| :---: | :---: |
+| [![Demo Medium 1](assets/demo_videos/thumbs/test_demo_medium_1_test_051.jpg)](assets/demo_videos/test_demo_medium_1_test_051.mp4) | [![Demo Medium 2](assets/demo_videos/thumbs/test_demo_medium_2_test_049.jpg)](assets/demo_videos/test_demo_medium_2_test_049.mp4) |
+| [Xem Video test_051 (MP4)](assets/demo_videos/test_demo_medium_1_test_051.mp4) | [Xem Video test_049 (MP4)](assets/demo_videos/test_demo_medium_2_test_049.mp4) |
+| *Bám bắt liên tục với độ tin cậy cao (> 90%), tốc độ xử lý thời gian thực 38.5+ FPS mượt mà.* | *Bám bắt quỹ đạo đổi hướng liên tục; giữ vững tâm ngắm và ước lượng vector vận tốc tức thời chính xác.* |
+
+### 2.3. Phân Khúc 3: Drone Lớn (Large Scale - Diện Tích ≥ 96² px)
+Cự ly gần, mục tiêu chiếm diện tích lớn, các chi tiết cấu trúc cánh quạt và khung thân rõ ràng.
+
+| Demo 1 (Sequence `test_074`) | Demo 2 (Sequence `test_075`) |
+| :---: | :---: |
+| [![Demo Large 1](assets/demo_videos/thumbs/test_demo_large_1_test_074.jpg)](assets/demo_videos/test_demo_large_1_test_074.mp4) | [![Demo Large 2](assets/demo_videos/thumbs/test_demo_large_2_test_075.jpg)](assets/demo_videos/test_demo_large_2_test_075.mp4) |
+| [Xem Video test_074 (MP4)](assets/demo_videos/test_demo_large_1_test_074.mp4) | [Xem Video test_075 (MP4)](assets/demo_videos/test_demo_large_2_test_075.mp4) |
+| *Bám sát đường nét drone kích thước lớn; nhánh Size Head và Offset Head dự đoán chính xác tuyệt đối kích thước hộp bao.* | *Kiểm nghiệm tính ổn định của giao diện Tactical HUD chuẩn ANTI-UAV RGB xuyên suốt toàn bộ chuỗi bay.* |
+
+---
+
+## 3. Kiến Trúc Mạng và Các Điểm Cải Tiến Cốt Lõi
 
 ```
-========================================================================================================================
 ĐẦU VÀO CHUỖI THỜI GIAN 9 KÊNH (640x640x9)
 [ Khung hình (t-1) : RGB ] + [ Khung hình (t) : Target RGB ] + [ Khung hình (t+1) : RGB ]
                                     │
@@ -67,14 +100,18 @@ Conv(128, 3x3) -> BN          Conv(64, 3x3) -> BN           Conv(64, 3x3) -> BN
 Conv(1, 1x1, Sigmoid)         Conv(2, 1x1, Tuyến tính)      Conv(2, 1x1, Sigmoid, b=-2.66)
 Xác suất tâm Drone            Sai số lượng tử hoá (dx, dy)  Kích thước hộp bọc (w, h) [0, 1]
 Kích thước: (80, 80, 1)       Kích thước: (80, 80, 2)       Kích thước: (80, 80, 2)
-========================================================================================================================
 ```
+
+<div align="center">
+  <img src="assets/model_architecture.jpg" width="85%" alt="Sơ đồ Kiến trúc Tổng thể CenterNet RGB" />
+  <p><em>Hình 1: Sơ đồ kiến trúc tổng thể mô hình CenterNet RGB kết hợp Temporal Triplet, ResNet50v2, P2-FPN, Coordinate Attention và 3 CenterNet Heads.</em></p>
+</div>
 
 ---
 
-## 3. Cơ Sở Toán Học và Công Thức Thuật Toán
+## 4. Cơ Sở Toán Học và Công Thức Thuật Toán
 
-### 3.1. Chuỗi Thời Gian 3 Thời Điểm (Temporal Triplet)
+### 4.1. Chuỗi Thời Gian 3 Thời Điểm (Temporal Triplet)
 Thay vì sử dụng các mạng tính luồng quang học phức tạp tiêu tốn tài nguyên, mô hình ghép trực tiếp 3 khung hình ảnh visible liên tiếp cách đều nhau một khoảng thời gian $\Delta t$:
 
 $$X_{\text{temporal}} = \left[ I_{t - \Delta t},\, I_t,\, I_{t + \Delta t} \right] \in \mathbb{R}^{H \times W \times 9}$$
@@ -86,7 +123,7 @@ Trong đó:
 
 ---
 
-### 3.2. Cơ Chế Chú Ý Toạ Độ (Coordinate Attention)
+### 4.2. Cơ Chế Chú Ý Toạ Độ (Coordinate Attention)
 Cơ chế Squeeze-and-Excitation (SE) thông thường nén toàn bộ không gian thành một vector qua phép lấy trung bình toàn cục:
 $$\mathbf{z} = \frac{1}{H \times W} \sum_{i=1}^H \sum_{j=1}^W x_c(i, j)$$
 Cách tiếp cận này làm mất hoàn toàn toạ độ không gian của vật thể nhỏ. Cơ chế Coordinate Attention phân rã phép nén không gian 2D thành hai phép tính 1D dọc theo trục ngang và trục dọc:
@@ -107,7 +144,7 @@ $$y_c(i, j) = x_c(i, j) \times g_c^h(i) \times g_c^w(j)$$
 
 ---
 
-### 3.3. Lưới Nhiệt Gaussian Ground Truth
+### 4.3. Lưới Nhiệt Gaussian Ground Truth
 Với mỗi nhãn hộp bọc drone $[x_1, y_1, x_2, y_2]$, toạ độ tâm liên tục trên bản đồ đặc trưng tỉ lệ $R = 8$ ($80 \times 80$) được xác định bởi:
 
 $$p_x = \frac{x_1 + x_2}{2 \cdot R}, \qquad p_y = \frac{y_1 + y_2}{2 \cdot R}$$
@@ -120,7 +157,7 @@ Bán kính phân tán $\sigma_p$ được điều chỉnh linh hoạt theo diệ
 
 ---
 
-### 3.4. Khắc Phục Triệt Để Hiện Tượng Dying ReLU Trong Nhánh Kích Thước (Size Head)
+### 4.4. Khắc Phục Triệt Để Hiện Tượng Dying ReLU Trong Nhánh Kích Thước (Size Head)
 
 Trong các mô hình CenterNet nguyên bản, kích thước hộp bọc được dự đoán bằng hàm kích hoạt `ReLU`:
 
@@ -150,7 +187,7 @@ Nhờ giá trị khởi tạo $b_0 = -2.66$, ngay tại bước lặp đầu ti�
 
 ---
 
-### 3.5. Hàm Loss
+### 4.5. Hàm Loss
 
 Hàm mục tiêu tổng hợp của hệ thống gồm 3 thành phần Loss:
 
@@ -175,7 +212,7 @@ Khoảng cách NWD duy trì độ mượt ngay cả khi 2 hộp bọc không gia
 
 ---
 
-## 4. Kết Quả Thực Nghiệm và Quá Trình Hội Tụ Huấn Luyện
+## 5. Kết Quả Thực Nghiệm và Quá Trình Hội Tụ Huấn Luyện
 
 Mô hình được huấn luyện trong 9 epochs trên môi trường Kaggle sử dụng một GPU NVIDIA Tesla P100 trước khi đạt trạng thái hội tụ tối ưu:
 
@@ -203,88 +240,119 @@ Mô hình được huấn luyện trong 9 epochs trên môi trường Kaggle s�
 
 ---
 
-## 5. Bộ Sưu Tập Hình Ảnh Khoa Học
+## 6. Bộ Sưu Tập Hình Ảnh Khoa Học (Scientific Figures)
 
-| Biểu Đồ Hội Tụ Loss 300 DPI | Phân Bố Kích Thước Vật Thể Chuẩn MS-COCO |
+| Sơ Đồ Kiến Trúc Tổng Thể | Cấu Trúc Kim Tự Tháp P2-FPN |
 | :---: | :---: |
-| ![Biểu Đồ Loss](assets/loss_curve.png) | ![Phân Bố Kích Thước Drone](assets/fig2_drone_scale_distribution.png) |
+| ![Kiến Trúc Tổng Thể](assets/model_architecture.jpg) | ![Cấu Trúc P2-FPN](assets/FPN.jpg) |
 
-| Chuỗi Triplet Thời Gian và Vi Sai Chuyển Động | Đường Cong Precision-Recall Benchmark |
+| Chuỗi Triplet Thời Gian (Visible RGB) | Phân Bố Kích Thước Drone Trong Dataset |
 | :---: | :---: |
-| ![Triplet Thời Gian](assets/fig1_rgb_temporal_triplet.png) | ![Đường Cong PR](assets/pr_curve.png) |
+| ![Triplet Thời Gian](assets/fig1_rgb_temporal_triplet.jpg) | ![Phân Bố Kích Thước](assets/fig2_drone_scale_distribution.jpg) |
 
-| So Sánh Chi Tiết Ground Truth và Dự Đoán Phóng To | Dự Đoán Trên Các Mẫu Kiểm Thử Ngẫu Nhiên |
+| So Sánh Chú Ý: SE-Net vs Coordinate Attention | Chi Tiết Cơ Chế Coordinate Attention (CA) |
 | :---: | :---: |
-| ![So Sánh GT và Pred](assets/fig_gt_vs_pred_comparison.png) | ![Các Mẫu Kiểm Thử](assets/fig_visual_test_samples.png) |
+| ![So Sánh SE vs CA](assets/comparison.jpg) | ![Cơ Chế CA](assets/CA.jpg) |
+
+| Động Học Khắc Phục Hiện Tượng Dying ReLU | Bề Mặt Gaussian Heatmap & Giảm Chấn Mềm |
+| :---: | :---: |
+| ![Dying ReLU](assets/relu_dying.jpg) | ![Gaussian Heatmap](assets/gaussian.jpg) |
+
+| Biểu Đồ Hội Tụ Hàm Mất Mát (Loss Curve) | Đường Cong Precision - Recall (PR Curve) |
+| :---: | :---: |
+| ![Biểu Đồ Loss](assets/loss_curve.jpg) | ![Đường Cong PR](assets/pr_curve.jpg) |
+
+| Mẫu Dự Đoán Kiểm Thử Định Tính | So Sánh Phóng To Ground Truth vs Dự Báo |
+| :---: | :---: |
+| ![Mẫu Kiểm Thử](assets/fig_visual_test_samples.jpg) | ![So Sánh Bounding Box](assets/fig_gt_vs_pred_comparison.jpg) |
 
 ---
 
-## 6. Dữ Liệu và Trọng Số Huấn Luyện Sẵn
+## 7. Dữ Liệu và Trọng Số Huấn Luyện Sẵn
 
 | Tài Nguyên | Mô Tả | Đường Dẫn Tải Về |
 | :--- | :--- | :--- |
 | **Tập dữ liệu Anti-UAV RGB** | Bộ dữ liệu định dạng chuẩn Pascal VOC (ảnh JPEG, nhãn XML, file CSV chuỗi thời gian) | [Kaggle Dataset: anti-uav-rgb](https://www.kaggle.com/datasets/namnguyen171006/anti-uav-rgb) |
-| **Trọng số tối ưu đã huấn luyện** | File trọng số tốt nhất `best_uav_model.keras` (~102.8 MB) | [Kaggle Dataset: uav-checkpoint](https://www.kaggle.com/datasets/namnguyen171006/uav-checkpoint) |
+| **Trọng số đã huấn luyện** | File trọng số tốt nhất `best_uav_model.keras` (~102.8 MB) | [Kaggle Dataset: uav-checkpoint](https://www.kaggle.com/datasets/namnguyen171006/uav-checkpoint) |
 
 ---
 
-## 7. Cấu Trúc Thư Mục Dự Án
+## 8. Cấu Trúc Thư Mục Dự Án
 
 ```
 .
-├── README.md                      # Tài liệu tổng quan kỹ thuật dự án (Tiếng Việt)
+├── README.md                      # Báo cáo tổng quan kỹ thuật dự án (Tiếng Việt học thuật)
 ├── LICENSE                        # Giấy phép mã nguồn mở MIT
-├── requirements.txt               # Danh sách thư viện phụ thuộc
+├── requirements.txt               # Danh sách thư viện phụ thuộc Python
 ├── .gitignore                     # Cấu hình bỏ qua file tạm và weights lớn
+├── train.py                       # Kịch bản huấn luyện mô hình đa nhiệm
+├── evaluate.py                    # Kịch bản đánh giá định lượng (mAP, Precision, Recall, NWD)
+├── demo.py                        # Kịch bản suy luận thời gian thực và Tactical HUD
+├── config.py                      # Chuyển tiếp cấu hình hệ thống
+├── report_anti_uav_centernet.tex  # Báo cáo khoa học định dạng LaTeX chuẩn mực
+├── report_anti_uav_centernet.pdf  # Báo cáo khoa học đã biên dịch (19 trang đầy đủ hình ảnh)
 │
-├── assets/                        # Hình ảnh khoa học 300 DPI và video demo tác chiến
-│   ├── fig1_rgb_temporal_triplet.png
-│   ├── fig2_drone_scale_distribution.png
-│   ├── fig_gt_vs_pred_comparison.png
-│   ├── fig_visual_test_samples.png
-│   ├── loss_curve.png
-│   ├── pr_curve.png
-│   ├── preview_rgb_only_check.png
-│   ├── test_demo_test_001.mp4
-│   └── test_demo_test_005.mp4
+├── assets/                        # Toàn bộ hình ảnh khoa học, biểu đồ và video thử nghiệm
+│   ├── demo_videos/               # 6 video demo tác chiến theo 3 phân khúc kích thước drone
+│   │   ├── test_demo_small_1_test_054.mp4   # Demo Drone Nhỏ 1 (Sequence test_054)
+│   │   ├── test_demo_small_2_test_055.mp4   # Demo Drone Nhỏ 2 (Sequence test_055)
+│   │   ├── test_demo_medium_1_test_051.mp4  # Demo Drone Trung Bình 1 (Sequence test_051)
+│   │   ├── test_demo_medium_2_test_049.mp4  # Demo Drone Trung Bình 2 (Sequence test_049)
+│   │   ├── test_demo_large_1_test_074.mp4   # Demo Drone Lớn 1 (Sequence test_074)
+│   │   ├── test_demo_large_2_test_075.mp4   # Demo Drone Lớn 2 (Sequence test_075)
+│   │   └── thumbs/                # Ảnh xem trước (thumbnails) cho từng video demo
+│   ├── model_architecture.jpg     # Sơ đồ kiến trúc tổng thể
+│   ├── FPN.jpg                    # Cấu trúc kim tự tháp đặc trưng P2-FPN
+│   ├── comparison.jpg             # So sánh SE-Net vs Coordinate Attention
+│   ├── CA.jpg                     # Cơ chế Coordinate Attention
+│   ├── fig1_rgb_temporal_triplet.jpg
+│   ├── fig2_drone_scale_distribution.jpg
+│   ├── relu_dying.jpg
+│   ├── gaussian.jpg
+│   ├── LMD.jpg
+│   ├── loss_curve.jpg
+│   ├── pr_curve.jpg
+│   ├── fig_visual_test_samples.jpg
+│   ├── fig_gt_vs_pred_comparison.jpg
+│   ├── train_002_visible.mp4      # Video mẫu để chạy thử nghiệm nhanh qua CLI
+│   └── train_002_visible.json     # Nhãn mẫu tương ứng
 │
-├── notebooks/                     # Bản code dạng Jupyter / Colab Notebook
-│   ├── Anti_UAV_CenterNet_RGB_Comprehensive.ipynb # Master Notebook: Toán học LaTeX và Chạy model tương tác
-│   └── anti_uav_rgb_dataset_preprocessing_colab.ipynb # Notebook Colab trích xuất và tải dữ liệu lên Kaggle
+├── notebooks/                     # Đúng 2 sổ tay Jupyter chuẩn của repo
+│   ├── Anti_UAV_CenterNet_RGB.ipynb        # Sổ tay mã nguồn huấn luyện từ đầu & suy luận
+│   └── anti_uav_inference_and_render.ipynb # Sổ tay suy luận, đánh giá định lượng & kết xuất 9 video
 │
-├── src/                           # Thư viện module Python chuẩn hóa
-│   ├── config.py                  # Cấu hình siêu tham số và đường dẫn mặc định
-│   ├── data/
-│   │   ├── dataset.py             # DataLoader nạp chuỗi thời gian bằng tf.data
-│   │   └── augmentations.py       # Tăng cường dữ liệu (lật ngang, chuẩn hóa)
-│   ├── models/
-│   │   ├── attention.py           # Triển khai lớp Coordinate Attention
-│   │   ├── backbone.py            # Trích xuất đặc trưng ResNet50v2
-│   │   ├── fpn.py                 # Mạng kim tự tháp đặc trưng P2-FPN
-│   │   ├── centernet_head.py      # Ba đầu dự đoán (Heatmap, Offset, Sigmoid Size)
-│   │   └── decoder.py             # Giải mã cực đại địa phương MaxPool 3x3 (không dùng NMS)
-│   ├── losses/
+├── src/                           # Gói mã nguồn cốt lõi của hệ thống
+│   ├── config.py                  # Siêu tham số và cấu hình hệ thống
+│   ├── data/                      # Dataloader, augmentation, dataset
+│   │   ├── augmentation.py        # Các hàm tiền xử lý và tăng cường dữ liệu
+│   │   └── dataset.py             # Pipeline nạp chuỗi thời gian bằng tf.data
+│   ├── losses/                    # Hệ thống hàm mất mát đa nhiệm
 │   │   ├── focal_loss.py          # Modified Gaussian Focal Loss
-│   │   ├── l1_loss.py             # Masked L1 Offset và Size Loss
-│   │   └── nwd_loss.py            # Hàm mất mát khoảng cách Wasserstein Gaussian chuẩn hóa
-│   ├── tracking/
+│   │   ├── l1_loss.py             # Masked Sub-pixel Offset L1 Loss
+│   │   ├── nwd_loss.py            # Normalized Gaussian Wasserstein Distance Loss
+│   │   └── total_loss.py          # Hàm mất mát tổng hợp kết hợp
+│   ├── models/                    # Kiến trúc mạng nơ-ron sâu
+│   │   ├── attention.py           # Triển khai lớp Coordinate Attention 1D
+│   │   ├── backbone.py            # Khung trích xuất đặc trưng ResNet50v2 Pre-activation
+│   │   ├── fpn.py                 # Mạng kim tự tháp P2-FPN đa tỉ lệ
+│   │   ├── centernet_head.py      # Ba đầu dự đoán Anchor-Free (Heatmap, Offset, Size)
+│   │   └── decoder.py             # Giải mã cực đại địa phương MaxPool 3x3 (NMS-Free)
+│   ├── tracking/                  # Theo dõi mục tiêu thời gian thực
 │   │   ├── ema_tracker.py         # Bộ lọc quán tính Trajectory EMA Filter
-│   │   └── hud_renderer.py        # Kết xuất giao diện tác chiến HUD quân sự
-│   └── utils/
-│       ├── download.py            # Tự động tải ảnh/video từ đường link URL mạng
+│   │   └── renderer.py            # Kết xuất đồ họa giao diện tác chiến Tactical HUD
+│   └── utils/                     # Tiện ích toán học và dữ liệu
+│       ├── download.py            # Tải tệp từ xa qua liên kết mạng
 │       └── metrics.py             # Tính toán IoU, NWD, Precision, Recall, mAP
 │
-├── demo.py                        # File thực thi chạy mô hình đa năng (Ảnh/Video, Cục bộ/URL, Webcam)
-├── train.py                       # File thực thi huấn luyện mô hình từ dòng lệnh
-├── evaluate.py                    # File thực thi đánh giá định lượng độc lập
-└── weights/
-    ├── README.md                  # Hướng dẫn tải trọng số mô hình
-    └── download_weights.py        # Script tự động tải checkpoint từ Kaggle
+└── weights/                       # Trọng số mô hình và nhật ký huấn luyện
+    ├── best_uav_model.keras       # Trọng số tiền huấn luyện tối ưu (~102.8 MB)
+    ├── training_history.csv       # Nhật ký số liệu huấn luyện qua 9 epochs
+    └── download_weights.py        # Script tự động tải trọng số từ Kaggle
 ```
 
 ---
 
-## 8. Hướng Dẫn Cài Đặt và Khởi Chạy Nhanh
+## 9. Hướng Dẫn Cài Đặt và Khởi Chạy Nhanh
 
 ### Bước 1: Sao Chép Mã Nguồn và Thiết Lập Môi Trường
 ```bash
@@ -294,9 +362,9 @@ cd anti-uav-centernet-rgb
 # Khởi tạo môi trường ảo Python (khuyến nghị)
 python -m venv venv
 
-# Kích hoạt trên Windows:
+# trên Windows:
 venv\Scripts\activate
-# Kích hoạt trên Linux/macOS:
+# trên Linux/macOS:
 # source venv/bin/activate
 
 # Cài đặt các thư viện phụ thuộc
@@ -311,29 +379,32 @@ python weights/download_weights.py
 
 ---
 
-## 9. Hướng Dẫn Sử Dụng Giao Diện Dòng Lệnh (CLI)
+## 10. Hướng Dẫn Sử Dụng Giao Diện Dòng Lệnh (CLI)
 
 File `demo.py` hỗ trợ nhận diện tự động ảnh tĩnh, video, đường link URL trên mạng hoặc camera trực tiếp:
 
 ### 1. Suy Luận Trên Ảnh Cục Bộ Hoặc Link Ảnh Trực Tiếp Từ URL
 ```bash
 # Ảnh trên máy
-python demo.py --source assets/fig_visual_test_samples.png --output outputs/detected_drone.png
+python demo.py --source assets/fig_visual_test_samples.jpg --output outputs/detected_drone.png
 
-# Link ảnh trực tiếp từ mạng Internet
+# Link ảnh từ URL
 python demo.py --source "https://example.com/drone_sample.jpg" --conf_thresh 0.20
 ```
 
 ### 2. Suy Luận Trên Video Cục Bộ Hoặc Link Video Trực Tiếp Từ URL
 ```bash
-# Video trên máy
-python demo.py --source assets/test_demo_test_001.mp4 --output outputs/tracked_mission.mp4
+# Video mẫu trên máy
+python demo.py --source assets/train_002_visible.mp4 --output outputs/tracked_mission.mp4
 
-# Link video trực tiếp từ mạng Internet
+# Chạy thử trực tiếp 1 trong các video demo trong assets/demo_videos:
+python demo.py --source assets/demo_videos/test_demo_small_1_test_054.mp4 --output outputs/tracked_small_uav.mp4
+
+# Link video từ URL
 python demo.py --source "https://example.com/aerial_uav_flight.mp4" --max_frames 250
 ```
 
-### 3. Bám Bắt Trực Tiếp Qua Webcam Thời Gian Thực
+### 3. Trực Tiếp Qua Webcam Thời Gian Thực
 ```bash
 python demo.py --source 0 --webcam
 ```
@@ -361,12 +432,12 @@ python train.py \
 
 ---
 
-## 10. Giấy Phép và Tài Liệu Tham Khảo
+## 11. Giấy Phép và Tài Liệu Tham Khảo
 
 Dự án này được phân phối dưới giấy phép mã nguồn mở [MIT License](LICENSE).
 
 Tài liệu tham khảo học thuật chính:
-* Dữ liệu huấn luyện cung cấp bởi **Ủy Ban Benchmark Anti-UAV**.
+* Dữ liệu huấn luyện cung cấp bởi [**Ủy Ban Benchmark Anti-UAV**](https://github.com/ZhaoJ9014/Anti-UAV).
 * Cơ chế chú ý toạ độ dựa trên công trình: [Hou et al., "Coordinate Attention for Efficient Mobile Network Design", CVPR 2021](https://arxiv.org/abs/2103.02907).
 * Khoảng cách Wasserstein Gaussian chuẩn hoá dựa trên công trình: [Wang et al., "Normalized Gaussian Wasserstein Distance for Tiny Object Detection", 2021](https://arxiv.org/abs/2110.13389).
 * Nguyên lý Anchor-Free CenterNet dựa trên công trình: [Zhou et al., "Objects as Points", arXiv 2019](https://arxiv.org/abs/1904.07850).

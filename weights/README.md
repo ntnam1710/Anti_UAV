@@ -1,30 +1,30 @@
-# 🎯 Pretrained Weights: best_uav_model.keras
+# Trong so Mo hinh Tien huan luyen: best_uav_model.keras
 
-This folder contains or tracks the optimal trained model weights for the **Anti-UAV Anchor-Free CenterNet (RGB-Only)** model.
+Thu muc nay chua hoac theo doi tep trong so toi uu nhat cua mo hinh **Anti-UAV Anchor-Free CenterNet (Chi su dung kenh Visible RGB)**.
 
-## Model Specifications
-* **Architecture**: ResNet-50v2 Backbone + Coordinate Attention + P2-FPN + Decoupled CenterNet Heads
-* **Input Shape**: `(640, 640, 9)` (3-frame Visible RGB temporal triplet: $t-1, t, t+1$)
-* **Size Head Activation**: Sigmoid with Logit Prior Initialization `Constant(-2.66)`
-* **File Size**: ~102.8 MB
-* **Format**: Keras SavedModel 3.x (`.keras`)
+## Thong so Ky thuat Mo hinh
+* **Kien truc**: ResNet-50v2 Backbone + Coordinate Attention + P2-FPN + Decoupled CenterNet Heads
+* **Kich thuoc dau vao**: `(640, 640, 9)` (Bo ba khung hinh Visible RGB lien tiep: $t-1, t, t+1$)
+* **Ham kich hoat nhanh du doan Size**: Sigmoid ket hop Logit Prior Initialization `Constant(-2.66)`
+* **Dung luong tep**: ~102.8 MB
+* **Dinh dang**: Keras SavedModel 3.x (`.keras`)
 
-## How to Download Weights
-If `best_uav_model.keras` is not present locally (due to GitHub's 100MB file limit), you can download it using any of the following methods:
+## Huong dan Tai trong so
+Neu tep `best_uav_model.keras` chua co san trong thu muc cuc bo (do gioi han kich thuoc tep 100MB tren GitHub), ban co the su dung mot trong cac cach sau:
 
-### Method 1: Download from Kaggle Dataset
-The weights are hosted on Kaggle:
-👉 **[Kaggle Dataset: uav-checkpoint](https://www.kaggle.com/datasets/namnguyen171006/uav-checkpoint)**
+### Cach 1: Tai truc tiep tu Kaggle Dataset
+Trong so duoc luu tru cong khai tai:
+* **[Kaggle Dataset: uav-checkpoint](https://www.kaggle.com/datasets/namnguyen171006/uav-checkpoint)**
 
-Place the downloaded `best_uav_model.keras` directly into this `weights/` folder.
+Sau khi tai ve, dat tep `best_uav_model.keras` truc tiep vao thu muc `weights/` nay.
 
-### Method 2: Python Script (Automatic)
-Run the automated downloader:
+### Cach 2: Su dung Script Python tu dong
+Thuc thi kịch ban tai tu dong:
 ```bash
 python weights/download_weights.py
 ```
 
-### Method 3: Using Kaggle CLI
+### Cach 3: Su dung Kaggle CLI
 ```bash
 kaggle datasets download -d namnguyen171006/uav-checkpoint -p weights/ --unzip
 ```

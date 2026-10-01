@@ -1,15 +1,22 @@
 # -*- coding: utf-8 -*-
 """
-Evaluation Metrics: IoU, Normalized Wasserstein Distance (NWD), Precision, Recall, mAP
+Các độ đo đánh giá định lượng: IoU, Normalized Gaussian Wasserstein Distance (NWD), Precision, Recall, mAP.
 """
 import numpy as np
 
 def compute_iou(b1, b2):
-    """
-    Computes Intersection over Union (IoU) between bounding box arrays.
-    b1: [N, 4] or [4]
-    b2: [N, 4] or [4]
-    Boxes format: [xmin, ymin, xmax, ymax]
+    r"""
+    Tính toán chỉ số Intersection over Union (IoU) giữa hai tập hợp Bounding Box:
+    \[
+    \text{IoU} = \frac{\text{Area}(B_1 \cap B_2)}{\text{Area}(B_1 \cup B_2)}
+    \]
+    
+    Tham số:
+        b1: Mảng tọa độ [N, 4] hoặc [4] theo định dạng [xmin, ymin, xmax, ymax].
+        b2: Mảng tọa độ [N, 4] hoặc [4] theo định dạng [xmin, ymin, xmax, ymax].
+        
+    Trả về:
+        np.ndarray hoặc float: Giá trị IoU trong đoạn [0.0, 1.0].
     """
     b1 = np.atleast_2d(b1)
     b2 = np.atleast_2d(b2)
@@ -25,9 +32,22 @@ def compute_iou(b1, b2):
     return iou.squeeze()
 
 def compute_nwd(b1, b2, c_norm=0.02):
-    """
-    Computes Normalized Gaussian Wasserstein Distance (NWD) for tiny objects:
-    Wang et al., 'Normalized Gaussian Wasserstein Distance for Tiny Object Detection', arXiv 2021.
+    r"""
+    Tính toán độ tương đồng Normalized Gaussian Wasserstein Distance (NWD) chuyên dụng cho đối tượng siêu nhỏ:
+    Tham khảo: Wang et al., 'Normalized Gaussian Wasserstein Distance for Tiny Object Detection', arXiv 2021.
+    
+    Công thức:
+    \[
+    \text{NWD}(N_a, N_b) = \exp\left(-\frac{\sqrt{W_2^2(N_a, N_b)}}{C}\right)
+    \]
+    
+    Tham số:
+        b1: Tọa độ [xmin, ymin, xmax, ymax] chuẩn hóa.
+        b2: Tọa độ [xmin, ymin, xmax, ymax] chuẩn hóa.
+        c_norm (float): Hằng số điều chỉnh độ nhạy khoảng cách (mặc định: 0.02).
+        
+    Trả về:
+        np.ndarray hoặc float: Giá trị NWD trong đoạn [0.0, 1.0].
     """
     b1 = np.atleast_2d(b1)
     b2 = np.atleast_2d(b2)
@@ -41,7 +61,15 @@ def compute_nwd(b1, b2, c_norm=0.02):
 
 def compute_ap(y_true, y_scores, matches):
     """
-    Computes Average Precision (AP) using standard 101-point or continuous interpolation.
+    Tính toán chỉ số Average Precision (AP) theo phương pháp nội suy đường cong Precision-Recall liên tục tiêu chuẩn VOC/COCO.
+    
+    Tham số:
+        y_true: Mảng boolean/int đánh dấu đối tượng thực tế tồn tại.
+        y_scores: Mảng điểm số tin cậy dự báo.
+        matches: Mảng boolean đánh dấu dự báo khớp với ground truth (IoU/NWD vượt ngưỡng).
+        
+    Trả về:
+        tuple: (ap, recall_curve, precision_curve)
     """
     total_pos = np.sum(y_true)
     if total_pos == 0:

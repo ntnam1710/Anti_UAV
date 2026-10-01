@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Helper script to download pretrained weights best_uav_model.keras from Kaggle.
+Kịch bản hỗ trợ tự động tải trọng số tiền huấn luyện best_uav_model.keras từ Kaggle.
 """
 import os
 import sys
@@ -10,21 +10,26 @@ WEIGHTS_DIR = os.path.dirname(os.path.abspath(__file__))
 TARGET_PATH = os.path.join(WEIGHTS_DIR, "best_uav_model.keras")
 
 def download():
+    """
+    Tải trọng số mô hình từ Kaggle Dataset bằng Kaggle CLI nếu tệp chưa tồn tại.
+    """
     if os.path.exists(TARGET_PATH) and os.path.getsize(TARGET_PATH) > 50 * 1024 * 1024:
-        print(f"[OK] Pretrained weights already exist at: {TARGET_PATH} ({os.path.getsize(TARGET_PATH)/(1024*1024):.2f} MB)")
+        file_size_mb = os.path.getsize(TARGET_PATH) / (1024 * 1024)
+        print(f"[XAC NHAN] Trong so tien huan luyen da ton tai tai: {TARGET_PATH} ({file_size_mb:.2f} MB)")
         return
 
-    print(">> Downloading weights from Kaggle dataset: namnguyen171006/uav-checkpoint...")
+    print("[INFO] Dang tai trong so tu Kaggle Dataset: namnguyen171006/uav-checkpoint...")
     try:
         cmd = f"kaggle datasets download -d namnguyen171006/uav-checkpoint -p \"{WEIGHTS_DIR}\" --unzip"
         subprocess.run(cmd, shell=True, check=True)
         if os.path.exists(TARGET_PATH):
-            print(f"✅ Successfully downloaded weights to: {TARGET_PATH}")
+            file_size_mb = os.path.getsize(TARGET_PATH) / (1024 * 1024)
+            print(f"[HOAN TAT] Da tai trong so thanh cong ve: {TARGET_PATH} ({file_size_mb:.2f} MB)")
         else:
-            print("[!] Download finished but best_uav_model.keras was not found in destination.")
+            print("[CANH BAO] Qua trinh tai hoan tat nhung khong tim thay best_uav_model.keras trong thu muc dich.")
     except Exception as e:
-        print(f"[ERROR] Could not download automatically via Kaggle CLI: {e}")
-        print("Please manually download from: https://www.kaggle.com/datasets/namnguyen171006/uav-checkpoint")
+        print(f"[LOI] Khong the tai tu dong qua Kaggle CLI: {e}")
+        print("Vui long tai thu cong tu dia chi: https://www.kaggle.com/datasets/namnguyen171006/uav-checkpoint")
 
 if __name__ == "__main__":
     download()
