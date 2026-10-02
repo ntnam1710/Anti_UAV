@@ -69,7 +69,7 @@ Thực nghiệm trên bộ dữ liệu Anti-UAV chuẩn qua 9 epoch trên GPU Te
 \section{Giới thiệu và Đặt vấn đề Nghiên cứu}
 
 \subsection{Bối cảnh và Thách thức Tác chiến}
-Sự phát triển bùng nổ của các phương tiện bay không người lái dân sự và quân sự quy mô nhỏ (micro-UAVs, FPV Drones) đã và đang làm thay đổi căn bản học thuyết tác chiến phi đối xứng cũng như an ninh không phận tầm cực thấp. Với chi phí chế tạo thấp, khả năng cơ động đa hướng linh hoạt và trần bay bám sát địa hình (terrain-following flight), micro-UAV trở thành mối đe dọa thường trực đối với các công trình quân sự, sân bay và hạ tầng trọng yếu. 
+Sự phát triển bùng nổ của các phương tiện bay không người lái dân sự và quân sự quy mô nhỏ (micro-UAVs, FPV Drones) đã và đang làm thay đổi căn bản học thuyết tác chiến phi đối xứng cũng như an ninh không phận tầm cực thấp. Với chi phí chế tạo thấp, khả năng cơ động đa hướng linh hoạt và trần bay bám sát địa hình, micro-UAV trở thành mối đe dọa thường trực đối với các công trình quân sự, sân bay và hạ tầng trọng yếu. 
 
 Trước các mục tiêu này, các hệ thống phòng không truyền thống bộc lộ những lỗ hổng lớn:
 \begin{enumerate}[label=(\roman*)]
@@ -80,9 +80,9 @@ Trước các mục tiêu này, các hệ thống phòng không truyền thống
 Do đó, \textbf{trinh sát và cảnh giới quang học (Electro-Optical/EO Surveillance)} đóng vai trò tuyến phòng thủ trực quan và tin cậy nhất. Tuy nhiên, việc phát hiện và bám bắt tự động micro-UAV trên luồng ảnh quang học đối mặt với các thách thức khốc liệt:
 \begin{itemize}
     \item \textbf{Quy mô mục tiêu siêu nhỏ (Tiny Object Detection):} Ở cự ly chiến thuật trên $100\text{ m}$, drone chỉ chiếm từ vài điểm ảnh đến vài chục điểm ảnh ($< 32^2\text{ px}$, chiếm dưới $0.4\%$ diện tích khung hình Full HD $1920 \times 1080$). Mục tiêu hoàn toàn thiếu các đặc trưng kết cấu bề mặt, hoa văn hoặc ngữ nghĩa chiều sâu, rất dễ bị suy biến và tiêu biến qua các tầng tích chập sâu của mạng nơ-ron.
-    \item \textbf{Nhiễu nền không gian và quang sai môi trường phức tạp:} Khung cảnh tác chiến trên không thường xuyên xuất hiện mây trời chuyển động, ánh nắng chói lóa (sun flare), các dị vật tự nhiên (chim chóc, lá cây bay) hoặc hậu cảnh mặt đất nhiều nhà cao tầng, cột ăng-ten, gây ra tỷ lệ cảnh báo giả (false alarm) cực kỳ cao nếu chỉ dựa vào phát hiện đơn khung hình tĩnh.
-    \item \textbf{Động học cơ động phi tuyến và gia tốc góc lớn:} UAV có thể thực hiện các động tác nhào lộn, tăng tốc tức thời, thay đổi quỹ đạo đột ngột và rơi vào trạng thái che khuất tạm thời (occlusion) sau vật cản, gây đứt gãy vết bám của các thuật toán theo dõi truyền thống.
-    \item \textbf{Áp lực độ trễ thời gian thực (Real-time Constraints):} Để phục vụ chỉ thị mục tiêu và kích hoạt các biện pháp áp chế hỏa lực/chế áp mềm, toàn bộ quy trình phát hiện và bám bắt bắt buộc phải đạt tần số trên 20 khung hình/giây (FPS) với độ trễ thấp trên phần cứng xử lý thực địa.
+    \item \textbf{Nhiễu nền không gian và quang sai môi trường phức tạp:} Khung cảnh tác chiến trên không thường xuyên xuất hiện mây trời chuyển động, ánh nắng chói lóa, các dị vật tự nhiên (chim chóc, lá cây bay) hoặc hậu cảnh mặt đất nhiều nhà cao tầng, cột ăng-ten, gây ra tỷ lệ cảnh báo giả cực kỳ cao nếu chỉ dựa vào phát hiện đơn khung hình tĩnh.
+    \item \textbf{Động học cơ động phi tuyến và gia tốc góc lớn:} UAV có thể thực hiện các động tác nhào lộn, tăng tốc tức thời, thay đổi quỹ đạo đột ngột và rơi vào trạng thái che khuất tạm thời sau vật cản, gây đứt gãy vết bám của các thuật toán theo dõi truyền thống.
+    \item \textbf{Áp lực độ trễ thời gian thực:} Để phục vụ chỉ thị mục tiêu và kích hoạt các biện pháp áp chế hỏa lực/chế áp mềm, toàn bộ quy trình phát hiện và bám bắt bắt buộc phải đạt tần số trên 20 khung hình/giây (FPS) với độ trễ thấp trên phần cứng xử lý thực địa.
 \end{itemize}
 
 \subsection{Hạn chế của Hệ thống Đa Phương Thức RGBT Truyền Thống và Quyết định Chuyển hẳn sang Thuần Visible RGB}
@@ -90,8 +90,8 @@ Do đó, \textbf{trinh sát và cảnh giới quang học (Electro-Optical/EO Su
 \begin{enumerate}
     \item \textbf{Rào cản giá thành và khí tài quang điện tử cồng kềnh:} Cảm biến hồng ngoại nhiệt độ nhạy cao (MWIR/LWIR) cùng cụm quang học làm bằng vật liệu thấu kính chuyên dụng (Germanium) có chi phí đắt đỏ gấp 5 đến 15 lần một camera cảm biến CMOS quang học tiêu chuẩn. Cụm thiết bị đa phổ có trọng lượng lớn, cồng kềnh và tiêu thụ nhiều điện năng, khiến chi phí sản xuất hàng loạt tăng cao và không thể triển khai đại trà trên các phương tiện tuần tra cơ động hoặc thiết bị trinh sát gọn nhẹ.
     \item \textbf{Nghịch lý Giao thoa Nền Nhiệt (Thermal Crossover Paradox):} Trong điều kiện thực địa (chiếm tới \textbf{60.4\%} kịch bản trong tập dữ liệu Anti-UAV chuẩn), khi nhiệt độ vỏ ngoài của drone cân bằng với nhiệt độ nền môi trường (ví dụ vào buổi trưa nắng gắt khi mái nhà, mặt đất nung nóng, hoặc vào thời điểm chạng vạng bình minh/hoàng hôn), độ tương phản nhiệt giữa mục tiêu và hậu cảnh triệt tiêu hoàn toàn. Khi đó, luồng ảnh nhiệt bị mất hoàn toàn tín hiệu, trở thành một kênh dữ liệu nhiễu vô giá trị và gây sai lệch cho các thuật toán hợp nhất đặc trưng.
-    \item \textbf{Lệch trục thị sai không gian -- thời gian (Spatial-Temporal Parallax Misalignment):} Do hai ống kính camera Visible và IR bắt buộc phải đặt cách nhau một khoảng cách vật lý (baseline parallax), việc căn chỉnh từng điểm ảnh (pixel-level registration) là bất khả thi khi cự ly tác chiến thay đổi liên tục và drone bay ở tốc độ cao. Hiện tượng thị sai gây ra các viền bóng ma (ghosting artifacts), làm biến dạng đặc trưng hình học và triệt tiêu độ chính xác của các mạng trích xuất đặc trưng sâu.
-    \item \textbf{Nút thắt băng thông và gánh nặng tài nguyên tính toán (Computational Overload):} Việc truyền tải và xử lý đồng thời 2 luồng video (RGB và Thermal) đòi hỏi gấp đôi băng thông I/O, gấp đôi dung lượng bộ nhớ đồ họa VRAM và tiêu tốn lượng tính toán FLOPs khổng lồ. Điều này tạo ra nút thắt cổ chai không thể vượt qua khi triển khai trên các vi xử lý nhúng tại biên (Edge AI như NVIDIA Jetson) trong yêu cầu tác chiến thời gian thực.
+    \item \textbf{Lệch trục thị sai không gian -- thời gian:} Do hai ống kính camera Visible và IR bắt buộc phải đặt cách nhau một khoảng cách vật lý (baseline parallax), việc căn chỉnh từng điểm ảnh (pixel-level registration) là bất khả thi khi cự ly tác chiến thay đổi liên tục và drone bay ở tốc độ cao. Hiện tượng thị sai gây ra các viền bóng ma (ghosting artifacts), làm biến dạng đặc trưng hình học và triệt tiêu độ chính xác của các mạng trích xuất đặc trưng sâu.
+    \item \textbf{Nút thắt băng thông và gánh nặng tài nguyên tính toán:} Việc truyền tải và xử lý đồng thời 2 luồng video (RGB và Thermal) đòi hỏi gấp đôi băng thông I/O, gấp đôi dung lượng bộ nhớ đồ họa VRAM và tiêu tốn lượng tính toán FLOPs khổng lồ. Điều này tạo ra nút thắt cổ chai không thể vượt qua khi triển khai trên các vi xử lý nhúng tại biên (Edge AI như NVIDIA Jetson) trong yêu cầu tác chiến thời gian thực.
 \end{enumerate}
 
 \paragraph{Quyết định chuyển dịch công nghệ sang Thuần Visible RGB:}
@@ -222,7 +222,7 @@ Phân chia Dataset & 160 Train / 67 Val / 91 Test & 18.683 Train / 6.228 Val & P
 \label{sec:temporal_triplet}
 Đối với vật thể bay cỡ nhỏ, đặc trưng hình thái tĩnh (chỉ dùng một khung hình $I_t$) thường không đủ để phân biệt drone với các dị vật như lá cây bay, chim bay hoặc nhiễu cảm biến. Tuy nhiên, vector chuyển động của drone mang tính chất cơ học nhất quán (vận tốc góc, gia tốc). 
 
-Thay vì sử dụng các thuật toán Optical Flow truyền thống (Lucas-Kanade) hay mạng nơ-ron hồi quy (ConvLSTM) tiêu tốn tài nguyên, ta xây dựng một tensor không -- thời gian ẩn (implicit spatio-temporal tensor) bằng cách xếp chồng 3 khung hình liên tiếp cách đều một chu kỳ thời gian $\Delta t$:
+Thay vì sử dụng các thuật toán Optical Flow truyền thống (Lucas-Kanade) hay mạng nơ-ron hồi quy (ConvLSTM) tiêu tốn tài nguyên, ta xây dựng một tensor không -- thời gian ẩn bằng cách xếp chồng 3 khung hình liên tiếp cách đều một chu kỳ thời gian $\Delta t$:
 \begin{equation}
     X_{\text{temporal}} = \left[ I_{t - \Delta t},\, I_t,\, I_{t + \Delta t} \right] \in \mathbb{R}^{H \times W \times 9}
 \end{equation}
@@ -263,7 +263,7 @@ Mạng trích xuất đặc trưng (Backbone) sử dụng kiến trúc ResNet-50
     \label{fig:residual_block_v2}
 \end{figure}
 
-Cấu trúc Pre-activation tạo ra một \textit{đường cao tốc} dòng gradient thuần túy (identity mapping) từ các tầng sâu về các tầng đầu vào, ngăn ngừa hiện tượng suy thoái mạng (degradation problem) khi xử lý tensor 9 kênh. Bốn khối trích xuất đặc trưng chính tạo ra các bản đồ đặc trưng tương ứng với các độ phân giải giảm dần:
+Cấu trúc Pre-activation tạo ra một \textit{đường cao tốc} dòng gradient thuần túy từ các tầng sâu về các tầng đầu vào, ngăn ngừa hiện tượng suy thoái mạng khi xử lý tensor 9 kênh. Bốn khối trích xuất đặc trưng chính tạo ra các bản đồ đặc trưng tương ứng với các độ phân giải giảm dần:
 \begin{itemize}
     \item $C_2 \in \mathbb{R}^{160 \times 160 \times 256}$ (Stride 4)
     \item $C_3 \in \mathbb{R}^{80 \times 80 \times 512}$ (Stride 8)
