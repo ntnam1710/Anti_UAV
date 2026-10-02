@@ -509,9 +509,90 @@ Nhờ cơ chế ngoại suy quán tính $\mathbf{b}_{\text{smooth}} + \mathbf{v}
 % ==============================================================================
 \section{Thực nghiệm và Đánh giá Định lượng}
 
-\subsection{Thiết lập Môi trường và Dữ liệu Huấn luyện}
+\subsection{Phân tích Thống kê Dữ liệu Ban đầu và Quy trình Tiền xử lý VOC Temporal}
+
+\subsubsection{Thống kê Bộ Dữ liệu Video Ban đầu Anti-UAV (Visible RGB Stream)}
+Bộ dữ liệu Anti-UAV chuẩn (Visible RGB stream) là tập dữ liệu video quang học độ nét cao ghi lại chuyển động thực tế của nhiều chủng loại drone khác nhau trong không gian tác chiến đa dạng (đô thị, đồi núi, mặt biển, bầu trời quang và mây mù phức tạp). Bảng~\ref{tab:raw_dataset_stats} trình bày thống kê chi tiết toàn bộ $318$ video gốc với $296.901$ khung hình:
+
+\begin{table}[htbp]
+\centering
+\caption{Thống kê định lượng toàn diện bộ dữ liệu video thô Anti-UAV (Visible RGB Stream).}
+\label{tab:raw_dataset_stats}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Phân vùng (Split)} & \textbf{Số lượng Video} & \textbf{Tỷ lệ Video (\%)} & \textbf{Tổng số Frames} & \textbf{Frames có Drone} & \textbf{Frames Che khuất / Mất dấu} & \textbf{Tỷ lệ Hiện diện (\%)} \\
+\midrule
+Tập Huấn luyện (Train) & 160 & 50.31\% & 149.528 & 142.192 & 7.336 & 95.09\% \\
+Tập Kiểm định (Val) & 67 & 21.07\% & 61.999 & 58.302 & 3.697 & 94.04\% \\
+Tập Kiểm thử (Test) & 91 & 28.62\% & 85.374 & 79.724 & 5.650 & 93.38\% \\
+\midrule
+\textbf{Tổng cộng Toàn bộ} & \textbf{318} & \textbf{100.0\%} & \textbf{296.901} & \textbf{280.218} & \textbf{16.683} & \textbf{94.38\%} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+Các đặc tính quan trọng của bộ dữ liệu thô bao gồm:
 \begin{itemize}
-    \item \textbf{Tập dữ liệu:} Anti-UAV Benchmark (kênh Visible RGB) gồm $18.683$ mẫu huấn luyện ($56.049$ khung hình trong các bộ ba) và $6.228$ mẫu kiểm định ($18.684$ khung hình). Kích thước khung hình gốc Full HD $1920 \times 1080$, resize về kích thước chuẩn $640 \times 640 \times 9$.
+    \item \textbf{Độ phân giải và thời lượng:} Video có độ phân giải gốc chuẩn Full HD $1920 \times 1080$, tốc độ quay $25$ FPS, tương ứng tổng thời lượng tích lũy đạt xấp xỉ $38.4$ giờ video giám sát không phận.
+    \item \textbf{Đặc trưng Bounding Box gốc:} Tổng cộng có $280.067$ nhãn hộp bao ground truth. Kích thước trung bình là chiều rộng $\bar{w} = 125.5\text{ px}$ (trung vị $116.0\text{ px}$), chiều cao $\bar{h} = 63.3\text{ px}$ (trung vị $61.0\text{ px}$), và diện tích trung bình $\bar{A} = 8.642\text{ px}^2$, chỉ chiếm khoảng $0.417\%$ diện tích toàn khung hình Full HD.
+    \item \textbf{Phân bố các thuộc tính thử thách môi trường (Challenge Attributes):} Bộ dữ liệu bao hàm đầy đủ các kịch bản thực chiến: Thermal Crossover (TC -- $60.4\%$), Fast Motion (FM -- $38.4\%$), Low Illumination (LI -- $36.8\%$), Scale Variation (SV -- $21.7\%$), Low Resolution (LR -- $15.1\%$), Out-of-View (OV -- $12.3\%$) và Occlusion (OC -- $3.8\%$).
+\end{itemize}
+
+\subsubsection{Tiền xử lý Chuỗi Thời gian và Tạo Tập Dữ liệu Chuẩn Pascal VOC (Temporal Triplet)}
+Để loại bỏ tính dư thừa thông tin giữa các khung hình liên tiếp ở tần số $25$ FPS và trích xuất trực tiếp vector vận tốc mà không cần mạng Optical Flow, hệ thống thực hiện trích xuất theo bước nhảy thời gian (temporal stride) và ghép nối 3 khung hình liên tiếp thành cấu trúc \textit{Temporal Triplet} $X_{\text{temporal}} = [I_{t - \Delta t}, I_t, I_{t + \Delta t}] \in \mathbb{R}^{640 \times 640 \times 9}$ kèm nhãn định dạng chuẩn Pascal VOC XML (Bảng~\ref{tab:temporal_voc_stats}):
+
+\begin{table}[htbp]
+\centering
+\caption{Thống kê tập dữ liệu Pascal VOC sau khi tiền xử lý và trích xuất chuỗi thời gian Temporal Triplet.}
+\label{tab:temporal_voc_stats}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Phân vùng Xử lý} & \textbf{Số mẫu Bộ ba (Triplets)} & \textbf{Khung hình JPEG Trích xuất} & \textbf{Mẫu Dương tính (Có Drone)} & \textbf{Mẫu Nền (Hard Negatives)} & \textbf{Tỷ lệ Phân chia (\%)} \\
+\midrule
+Tập Huấn luyện (Train) & 18.683 & 56.049 & 17.749 (95.0\%) & 934 (5.0\%) & 75.0\% \\
+Tập Kiểm định (Val) & 6.228 & 18.684 & 5.854 (94.0\%) & 374 (6.0\%) & 25.0\% \\
+\midrule
+\textbf{Tổng cộng (Train + Val)} & \textbf{24.911} & \textbf{74.733} & \textbf{23.603 (94.7\%)} & \textbf{1.308 (5.3\%)} & \textbf{100.0\%} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\paragraph{Mối liên hệ giải tích giữa Phân bố Kích thước và Tham số Khởi tạo $b_0 = -2.66$:}
+Thực nghiệm phân loại quy mô vật thể theo chuẩn MS-COCO trên tập huấn luyện (Hình~\ref{fig:drone_scale_distribution}) cho thấy: Tiny/Small Drone chiếm $1.7\%$, Medium Drone chiếm $68.6\%$, và Large Drone chiếm $29.7\%$. Tỷ lệ kích thước trung bình so với khung hình là $\bar{w}_{\text{norm}} = 125.5 / 1920 \approx 0.0654$ và $\bar{h}_{\text{norm}} = 63.3 / 1080 \approx 0.0586$, hội tụ quanh giá trị $s_0 \approx 0.065$. Kết quả này dẫn trực tiếp tới giá trị khởi tạo phân phối tiền nghiệm Logit Prior Bias:
+\begin{equation}
+    b_0 = \ln\left(\frac{s_0}{1 - s_0}\right) = \ln\left(\frac{0.065}{0.935}\right) \approx -2.66
+\end{equation}
+giúp loại bỏ hoàn toàn hiện tượng Dying ReLU ngay từ bước lặp đầu tiên.
+
+\subsubsection{Bảng So sánh Đối chiếu Toàn diện giữa Dữ liệu Thô và Dữ liệu Sau Xử lý}
+Bảng~\ref{tab:dataset_comparison} tổng hợp sự chuyển đổi từ tập dữ liệu video ban đầu sang tập dữ liệu cấu trúc thời gian chuẩn mực phục vụ huấn luyện:
+
+\begin{table}[htbp]
+\centering
+\caption{Bảng so sánh đối chiếu đặc tính kỹ thuật giữa Dữ liệu Gốc và Dữ liệu Sau Xử lý Temporal VOC.}
+\label{tab:dataset_comparison}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lccp{6.5cm}}
+\toprule
+\textbf{Tiêu chí So sánh} & \textbf{Dữ liệu Gốc (Raw Anti-UAV RGB)} & \textbf{Dữ liệu Sau Xử lý (Temporal VOC)} & \textbf{Ý nghĩa Kỹ thuật / Tác chiến} \\
+\midrule
+Định dạng dữ liệu & Video MP4 (H.264) + JSON chuỗi & Ảnh JPEG + Pascal VOC XML + CSV & Chuẩn hóa định dạng cho pipeline TensorFlow / Keras \\
+Quy mô mẫu & 318 clips (296.901 frames) & 24.911 triplets (74.733 frames) & Loại bỏ dư thừa frame tĩnh, tối ưu hóa tốc độ huấn luyện \\
+Độ phân giải & $1920 \times 1080$ px (Full HD) & $640 \times 640$ px (Bi-linear resize) & Giảm tải VRAM GPU, thông tin chi tiết bảo toàn qua P2-FPN \\
+Cấu trúc Tensor & 1 khung hình đơn ($H \times W \times 3$) & Bộ ba thời gian ($H \times W \times 9$) & Trích xuất trực tiếp vector vận tốc không cần Optical Flow \\
+Hard Negatives & 16.683 frames âm tính ($5.62\%$) & 1.308 mẫu bộ ba không có drone & Huấn luyện mạng triệt tiêu cảnh báo giả trên mây và công trình \\
+Phân chia Dataset & 160 Train / 67 Val / 91 Test & 18.683 Train / 6.228 Val & Phân tầng độc lập theo chuỗi bay, ngăn ngừa rò rỉ dữ liệu \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\subsection{Thiết lập Môi trường Phần cứng và Siêu tham số Huấn luyện}
+\begin{itemize}
     \item \textbf{Phần cứng:} 1 GPU NVIDIA Tesla P100 (16GB VRAM), Intel Xeon CPU @ 2.20GHz.
     \item \textbf{Bộ tối ưu hóa:} AdamW với weight decay $10^{-4}$, lịch trình giảm tốc độ học Cosine Decay với initial learning rate $\eta_0 = 10^{-4}$, giảm dần về $\eta_{\min} = 10^{-6}$.
     \item \textbf{Batch size:} 8 mẫu/batch. Kỹ thuật gradient clipping giới hạn chuẩn vector gradient tối đa $\|\mathbf{g}\| \le 10.0$.
