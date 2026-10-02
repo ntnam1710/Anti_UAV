@@ -12,11 +12,11 @@
 ## Mục Lục
 1. [Tổng Quan và Đóng Góp Chính](#1-tổng-quan-và-đóng-góp-chính)
 2. [Video Trải Nghiệm Tác Chiến Thực Tế (Benchmark Demo Videos)](#2-video-trải-nghiệm-tác-chiến-thực-tế-benchmark-demo-videos)
-3. [Kiến Trúc Mạng và Các Điểm Cải Tiến Cốt Lõi](#3-kiến-trúc-mạng-và-các-điểm-cải-tiến-cốt-lõi)
-4. [Cơ Sở Toán Học và Công Thức Thuật Toán](#4-cơ-sở-toán-học-và-công-thức-thuật-toán)
-5. [Kết Quả Thực Nghiệm và Quá Trình Hội Tụ Huấn Luyện](#5-kết-quả-thực-nghiệm-và-quá-trình-hội-tụ-huấn-luyện)
-6. [Bộ Sưu Tập Hình Ảnh Khoa Học](#6-bộ-sưu-tập-hình-ảnh-khoa-học)
-7. [Thống Kê Dữ Liệu và Trọng Số Huấn Luyện Sẵn](#7-thống-kê-dữ-liệu-và-trọng-số-huấn-luyện-sẵn)
+3. [Thống Kê Dữ Liệu và Tiền Xử Lý Chuỗi Không - Thời Gian](#3-thống-kê-dữ-liệu-và-tiền-xử-lý-chuỗi-không---thời-gian-dataset-statistics--preprocessing)
+4. [Kiến Trúc Mạng và Các Điểm Cải Tiến Cốt Lõi](#4-kiến-trúc-mạng-và-các-điểm-cải-tiến-cốt-lõi)
+5. [Cơ Sở Toán Học và Công Thức Thuật Toán](#5-cơ-sở-toán-học-và-công-thức-thuật-toán)
+6. [Kết Quả Thực Nghiệm và Quá Trình Hội Tụ Huấn Luyện](#6-kết-quả-thực-nghiệm-và-quá-trình-hội-tụ-huấn-luyện)
+7. [Bộ Sưu Tập Hình Ảnh Khoa Học](#7-bộ-sưu-tập-hình-ảnh-khoa-học-scientific-figures)
 8. [Cấu Trúc Thư Mục Dự Án](#8-cấu-trúc-thư-mục-dự-án)
 9. [Hướng Dẫn Cài Đặt và Khởi Chạy Nhanh](#9-hướng-dẫn-cài-đặt-và-khởi-chạy-nhanh)
 10. [Hướng Dẫn Sử Dụng Giao Diện Dòng Lệnh (CLI)](#10-hướng-dẫn-sử-dụng-giao-diện-dòng-lệnh-cli)
@@ -26,15 +26,33 @@
 
 ## 1. Tổng Quan và Đóng Góp Chính
 
-Nhiệm vụ phát hiện và bám bắt các phương tiện bay không người lái (UAV / Drone) kích thước nhỏ, chuyển động nhanh trên nền trời và mặt đất phức tạp là một bài toán trọng tâm trong an ninh phòng không hiện đại. Các giải pháp truyền thống dựa trên hệ thống đa phổ Visible - Infrared (RGBT 12 kênh) đòi hỏi cảm biến nhiệt cồng kềnh, chi phí đắt đỏ, dễ lệch trục không gian giữa 2 quang phổ và tiêu tốn nhiều bộ nhớ khi xử lý.
+### 1.1. Bối Cảnh và Thách Thức Tác Chiến Phòng Không Tầm Thấp
+Sự phát triển bùng nổ của các phương tiện bay không người lái dân dụng và quân sự cỡ nhỏ (micro-UAVs, FPV Drones) đã làm thay đổi sâu sắc học thuyết tác chiến phi đối xứng và đặt ra thách thức chưa từng có đối với an ninh không phận tầm cực thấp. Với chi phí chế tạo thấp, khả năng cơ động đa hướng linh hoạt và đường bay bám sát địa hình (terrain-following flight), micro-drone dễ dàng né tránh các hệ thống phòng không truyền thống:
+* **Vô hiệu hóa cảm biến Radar**: Do kích thước vật lý nhỏ gọn (sải cánh dưới $50\text{ cm}$) và thân vỏ chủ yếu bằng sợi carbon hoặc vật liệu composite, diện tích phản xạ hiệu dụng radar (Radar Cross Section - RCS) của micro-drone thường nhỏ hơn $0.01\text{ m}^2$, hoàn toàn chìm sâu dưới ngưỡng cảnh giới của radar tầm xa.
+* **Hạn chế của cảm biến RF và Âm học**: Thiết bị quét tần số vô tuyến (RF scanning) dễ bị đánh lừa khi UAV bay tự hành theo tọa độ GPS/GLONASS hoặc bị gây nhiễu điện tử; trong khi cảm biến âm thanh có bán kính phát hiện hạn hẹp và dễ bị lấn át bởi tiếng ồn môi trường đô thị.
 
-Dự án này xây dựng một giải pháp hoàn chỉnh dựa trên mạng **Anchor-Free CenterNet chỉ sử dụng luồng ảnh Visible RGB** với các kỹ thuật cốt lõi:
+Do đó, **hệ thống trinh sát và cảnh giới quang học (Electro-Optical/EO Surveillance)** đóng vai trò phòng thủ trực quan và khả thi nhất. Tuy nhiên, bài toán thị giác máy tính cho UAV quang học tầm thấp đối mặt với nhiều khó khăn nghiêm trọng:
+1. **Kích thước mục tiêu siêu nhỏ (Tiny Scale)**: Ở cự ly chiến thuật trên $100\text{ m}$, drone chỉ chiếm từ vài pixel đến vài chục pixel ($< 32^2\text{ px}$, dưới $0.4\%$ khung hình Full HD), hoàn toàn thiếu thông tin họa tiết bề mặt và dễ bị tiêu biến qua các tầng tích chập sâu.
+2. **Nhiễu nền quang học hỗn loạn**: Mây trời chuyển động, ánh sáng mặt trời chói lóa (sun flare), chim bay, lá cây rung chuyển hoặc hậu cảnh nhiều nhà cao tầng liên tục kích hoạt báo động giả nếu chỉ dựa vào phát hiện đơn khung hình tĩnh.
+3. **Động học cơ động phi tuyến**: Drone có thể đột ngột tăng tốc, đổi hướng gấp hoặc bị che khuất tạm thời (occlusion), gây đứt gãy vết bám của các thuật toán theo dõi cổ điển.
+4. **Áp lực thời gian thực**: Toàn bộ hệ thống phải vận hành với tốc độ khung hình cao ($> 20\text{ FPS}$) và độ trễ thấp để kịp thời chỉ thị mục tiêu cho các tổ hợp hỏa lực/chế áp đánh chặn.
 
+### 1.2. Hạn Chế của Hệ Thống Đa Phương Thức RGBT Truyền Thống và Quyết Định Chuyển Hẳn Sang Thuần Visible RGB
+Trước đây, nhiều giải pháp tiếp cận bài toán bằng hệ thống cảm biến kép quang học - hồng ngoại (Visible RGB + Thermal IR, gọi tắt là RGBT) với kỳ vọng ảnh nhiệt sẽ nhận diện bức xạ nhiệt từ pin và động cơ drone. Tuy nhiên, quá trình triển khai thực tế bộc lộ 4 nhược điểm cố hữu chí mạng:
+1. **Rào cản giá thành và khí tài cồng kềnh**: Cảm biến hồng ngoại nhiệt (MWIR/LWIR) cùng thấu kính chuyên dụng (Germanium) có chi phí đắt đỏ gấp 5 đến 15 lần camera quang học tiêu chuẩn, khối lượng lớn và tiêu hao nhiều năng lượng, cản trở việc trang bị hàng loạt trên các trạm hỏa lực cơ động.
+2. **Nghịch lý Giao thoa Nền Nhiệt (Thermal Crossover Paradox)**: Khi nhiệt độ thân vỏ drone cân bằng với nhiệt độ môi trường (như trưa hè nắng gắt khi mái nhà, mặt đất bị nung nóng, hoặc thời điểm chạng vạng bình minh/hoàng hôn — chiếm tới **60.4%** kịch bản trong tập dữ liệu Anti-UAV), độ tương phản nhiệt bị triệt tiêu hoàn toàn. Khi đó, luồng ảnh nhiệt mất tín hiệu, trở thành kênh dữ liệu nhiễu vô giá trị.
+3. **Lệch trục thị sai không gian - thời gian (Parallax & Spatial-Temporal Misalignment)**: Hai ống kính camera Visible và IR bắt buộc đặt cách nhau một khoảng cách vật lý (baseline parallax), khiến việc đồng bộ từng pixel (pixel registration) là bất khả thi khi drone bay nhanh và thay đổi cự ly liên tục. Hiện tượng này tạo ra bóng ma (ghosting artifacts), làm sai lệch các tầng hợp nhất đặc trưng đa phổ.
+4. **Gánh nặng bộ nhớ VRAM và tài nguyên tính toán (Computational Overload)**: Việc xử lý đồng thời 2 luồng video đòi hỏi gấp đôi băng thông, gấp đôi dung lượng bộ nhớ VRAM GPU và chi phí tính toán FLOPs, gây quá nhiệt và tắc nghẽn khi triển khai trên các phần cứng nhúng tại biên (Edge AI như Jetson).
+
+**Quyết Định Chuyển Dịch Sang Thuần Quang Học Visible RGB**:
+Nhận thức rõ các rào cản trên, dự án này đưa ra quyết định kỹ thuật dứt khoát: **Loại bỏ hoàn toàn kênh hồng ngoại (IR), chuyển đổi trọn vẹn sang hệ thống thị giác thuần Visible RGB**. Bằng cách khai thác **động lực học thời gian qua chuỗi 3 khung hình liên tiếp (Temporal Triplet 9 kênh RGB)**, hệ thống trích xuất vi sai chuyển động cơ học của drone một cách tự nhiên và chính xác hơn bất kỳ cảm biến nhiệt nào, đồng thời triệt tiêu hoàn toàn chi phí quang học xa xỉ, xóa bỏ hiện tượng lệch trục parallax, tiết kiệm 50% tài nguyên bộ nhớ VRAM và bảo đảm tốc độ suy luận mượt mà đạt **21.4 FPS** trên GPU.
+
+### 1.3. Các Đóng Góp Kỹ Thuật Cốt Lõi của Công Trình
 * **Ghép chuỗi thời gian 3 thời điểm (9 kênh RGB)**: Xây dựng tensor đầu vào $X_{\text{temporal}} = [I_{t-\Delta t}, I_t, I_{t+\Delta t}] \in \mathbb{R}^{640 \times 640 \times 9}$, cho phép các tầng tích chập trích xuất trực tiếp vận tốc và hướng chuyển động của drone mà không cần mạng luồng quang học (Optical Flow) hay mạng hồi quy tuần hoàn (RNN/LSTM) nặng nề.
 * **Cấu trúc đặc trưng P2-FPN kết hợp Coordinate Attention**: Mở rộng Features Pyramid Network xuống mức độ phân giải cao P2 (stride 8, kích thước bản đồ đặc trưng $80 \times 80$) kết hợp với cơ chế chú ý toạ độ (Coordinate Attention) theo 2 hướng ngang và dọc, bảo toàn tối đa thông tin vị trí của các vật thể siêu nhỏ ($< 32^2\text{px}$).
 * **Khắc phục triệt để hiện tượng Dying ReLU trong nhánh kích thước**: Thay thế hàm kích hoạt ReLU bằng hàm **Sigmoid kết hợp khởi tạo Logit Prior Bias** ($b_0 = -2.66 \implies \sigma(b_0) \approx 0.065$). Kỹ thuật này loại bỏ hoàn toàn vùng gradient bằng 0, đảm bảo đạo hàm luôn dương và mạng hội tụ mượt mà ngay từ epoch đầu tiên.
-* **Bộ lọc quán tính quỹ đạo EMA**: Tích hợp thuật toán lọc quán tính Trajectory Exponential Moving Average (EMA) giúp duy trì bám bắt liên tục và chuyển sang trạng thái `OCCLUDED` khi drone bị che khuất ngắn hạn.
-* **Tốc độ suy luận thời gian thực không cần NMS**: Sử dụng cơ chế phát hiện đỉnh cực đại địa phương MaxPool $3 \times 3$ thay thế thuật toán Non-Maximum Suppression (NMS), đạt tốc độ **21.4 FPS** trên GPU.
+* **Bộ lọc quán tính quỹ đạo Trajectory EMA Filter**: Tích hợp thuật toán lọc quán tính quỹ đạo giúp duy trì bám bắt liên tục và chuyển sang trạng thái `OCCLUDED` khi drone bị che khuất ngắn hạn.
+* **Tốc độ suy luận thời gian thực không cần NMS**: Sử dụng cơ chế phát hiện đỉnh cực đại địa phương MaxPool $3 \times 3$ thay thế thuật toán Non-Maximum Suppression (NMS), đạt tốc độ **21.4 FPS** trên GPU (chỉ 2.34 phút cho 3.000 frames kiểm thử).
 
 ---
 
@@ -71,7 +89,78 @@ Cự ly gần, mục tiêu chiếm diện tích lớn, các chi tiết cấu tr�
 
 ---
 
-## 3. Kiến Trúc Mạng và Các Điểm Cải Tiến Cốt Lõi
+## 3. Thống Kê Dữ Liệu và Tiền Xử Lý Chuỗi Không - Thời Gian (Dataset Statistics & Preprocessing)
+
+### 3.1. Thống Kê Chi Tiết Bộ Dữ Liệu Ban Đầu (Raw Anti-UAV-RGB Videos)
+
+Bộ dữ liệu Anti-UAV chuẩn (Visible RGB stream) là tập dữ liệu video quang học độ phân giải cao ghi lại chuyển động thực tế của nhiều chủng loại UAV/Drone trong không gian đa dạng (đô thị, đồi núi, mặt nước, bầu trời quang và mây mù):
+
+| Phân Vùng Dữ Liệu (Split) | Số Lượng Video (Chuỗi) | Tổng Khung Hình (Frames) | Khung Hình Có UAV (Dương Tính) | Khung Hình Che Khuất / Mất Dấu (Âm Tính) | Tỷ Lệ Hiện Diện UAV |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Tập Huấn Luyện (Train)** | **160** videos (50.3%) | **149.528** frames | 142.192 frames | 7.336 frames | **95.1%** |
+| **Tập Kiểm Định (Val)** | **67** videos (21.1%) | **61.999** frames | 58.302 frames | 3.697 frames | **94.0%** |
+| **Tập Kiểm Thử (Test)** | **91** videos (28.6%) | **85.374** frames | 79.724 frames | 5.650 frames | **93.4%** |
+| **Tổng Cộng Toàn Bộ Dataset** | **318** videos (100%) | **296.901** frames | **280.218** frames | **16.683** frames | **94.38%** |
+
+* **Đặc tính kỹ thuật video gốc**: Độ phân giải gốc **$1920 \times 1080$ (Full HD)**, tốc độ quay **25 FPS**, tổng thời lượng tích lũy đạt xấp xỉ **38.4 giờ** video tác chiến liên tục.
+* **Tổng số nhãn Bounding Box gốc**: **280.067 hộp bao**, trong đó kích thước trung bình là $\bar{w} = 125.5\text{ px}$, $\bar{h} = 63.3\text{ px}$, diện tích trung bình $\bar{A} = 8.642\text{ px}^2$ (chỉ chiếm **$0.417\%$** diện tích toàn khung hình Full HD).
+* **Phân bố các thuộc tính thử thách môi trường tác chiến (Challenge Attributes)**:
+  - **Thermal Crossover (TC)**: 192 videos (**60.4%**) - Nhiệt độ và quang học bị giao thoa nền nhiệt.
+  - **Fast Motion (FM)**: 122 videos (**38.4%**) - Drone cơ động chuyển hướng và bay với gia tốc lớn.
+  - **Low Illumination (LI)**: 117 videos (**36.8%**) - Điều kiện ánh sáng yếu, bình minh, hoàng hôn hoặc ban đêm.
+  - **Scale Variation (SV)**: 69 videos (**21.7%**) - Drone thay đổi cự ly tiếp cận, biến thiên quy mô kích thước liên tục.
+  - **Low Resolution (LR)**: 48 videos (**15.1%**) - Mục tiêu ở khoảng cách cực xa, chi tiết cấu trúc bị mờ.
+  - **Out-of-View (OV)**: 39 videos (**12.3%**) - Drone bay hoàn toàn ra khỏi tầm nhìn camera quang học.
+  - **Occlusion (OC)**: 12 videos (**3.8%**) - Drone bị cây cối, cột đèn hoặc vật cản che khuất tầm nhìn.
+
+---
+
+### 3.2. Tiền Xử Lý Chuỗi Thời Gian và Tạo Tập Dữ Liệu Pascal VOC (Temporal Triplet)
+
+Nhằm loại bỏ tính dư thừa thông tin giữa các khung hình liên tiếp ở tần số 25 FPS và trích xuất trực tiếp động học chuyển động mà không cần mạng Optical Flow, hệ thống thực hiện downsampling theo bước nhảy thời gian (temporal stride) và ghép nối 3 khung hình liên tiếp thành cấu trúc **Temporal Triplet**:
+
+$$X_{\text{temporal}} = \left[ I_{t - \Delta t},\, I_t,\, I_{t + \Delta t} \right] \in \mathbb{R}^{640 \times 640 \times 9}$$
+
+| Phân Vùng Xử Lý (Split) | Số Bộ Ba (Mẫu Triplets) | Khung Hình JPEG Thực Tế | Tỷ Lệ Mẫu Dương Tính (Có Drone) | Mẫu Nền (Hard Negative) | Tỷ Lệ Phân Chia |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Tập Huấn Luyện (Train)** | **18.683** mẫu bộ ba | **56.049** frames ảnh | 17.749 mẫu (~95.0%) | 934 mẫu (~5.0%) | **75.0%** |
+| **Tập Kiểm Định (Val)** | **6.228** mẫu bộ ba | **18.684** frames ảnh | 5.854 mẫu (~94.0%) | 374 mẫu (~6.0%) | **25.0%** |
+| **Tổng Cộng (Train + Val)** | **24.911** mẫu bộ ba | **74.733** frames ảnh | **23.603** mẫu (~94.7%) | **1.308** mẫu (~5.3%) | **100%** |
+
+* **Phân bố kích thước Bounding Box trong tập huấn luyện (Chuẩn MS-COCO - Minh chứng tại Hình 2)**:
+  - **Tiny / Small (< 32² px = 1024 px²)**: **1.7%** mục tiêu siêu nhỏ (được mạng P2-FPN giữ vững độ phân giải cao để phát hiện).
+  - **Medium (32² px² ≤ Diện tích < 96² px²)**: **68.6%** mục tiêu tầm trung (phân khúc chủ đạo của drone chiến thuật).
+  - **Large (Diện tích ≥ 96² px² = 9216 px²)**: **29.7%** mục tiêu cự ly gần.
+* **Cơ sở xác lập tham số hình học Logit Prior Bias**:
+  - Tỷ lệ chuẩn hóa trung bình thực tế: $\bar{w}_{\text{norm}} = 125.5 / 1920 = 0.0654$, $\bar{h}_{\text{norm}} = 63.3 / 1080 = 0.0586 \implies s_0 \approx 0.065$.
+  - Khởi tạo Logit Prior Bias nhánh Size Head: $b_0 = \ln\left(\frac{s_0}{1 - s_0}\right) = \ln\left(\frac{0.065}{0.935}\right) \approx -2.66$, bảo đảm đạo hàm Sigmoid luôn dương và loại bỏ hoàn toàn hiện tượng Dying ReLU.
+
+---
+
+### 3.3. Bảng So Sánh Đối Chiếu Toàn Diện (Raw Video vs. Processed Temporal VOC)
+
+| Tiêu Chí So Sánh | Dữ Liệu Gốc (Raw Anti-UAV RGB) | Dữ Liệu Sau Xử Lý (Temporal Triplet VOC) | Ý Nghĩa Kỹ Thuật & Tác Chiến |
+| :--- | :--- | :--- | :--- |
+| **Định dạng lưu trữ** | Video MP4 (H.264) + Nhãn JSON chuỗi | Khung ảnh JPEG + Nhãn Pascal VOC XML + CSV | Chuẩn hóa định dạng cho pipeline TensorFlow / Keras |
+| **Số lượng tệp / mẫu** | 318 video clips (296.901 frames) | 24.911 mẫu bộ ba (74.733 frames trích xuất) | Loại bỏ dư thừa frame tĩnh, tối ưu hóa thời gian huấn luyện |
+| **Độ phân giải khung hình** | $1920 \times 1080$ px (Full HD) | $640 \times 640$ px (Bi-linear resize) | Giảm dung lượng VRAM GPU nhưng bảo tồn chi tiết bằng P2-FPN |
+| **Cấu trúc Tensor đầu vào** | 1 khung hình đơn lẻ (3 kênh RGB) | Ghép chuỗi thời gian 3 thời điểm (9 kênh RGB) | Trích xuất trực tiếp vector vận tốc tức thời không cần Optical Flow |
+| **Mẫu âm tính (Hard Negatives)**| 16.683 frames (chiếm 5.62%) | 1.308 mẫu bộ ba không có drone | Rèn luyện mô hình triệt tiêu cảnh báo giả trên nền mây và nhà cao tầng |
+| **Phân chia dữ liệu** | 160 Train / 67 Val / 91 Test | 18.683 Train / 6.228 Val (Tỷ lệ 75/25) | Phân tầng dữ liệu độc lập theo từng chuỗi bay |
+| **Mục đích sử dụng** | Lưu trữ thô và suy luận toàn chuỗi video | Huấn luyện và đánh giá kiểm định trực tiếp mạng nơ-ron | Đạt tốc độ hội tụ nhanh vượt bậc qua 9 Epochs |
+
+---
+
+### 3.4. Liên Kết Tải Về Dữ Liệu và Trọng Số Tiền Huấn Luyện
+
+| Tài Nguyên | Mô Tả Kỹ Thuật | Đường Dẫn Tải Về |
+| :--- | :--- | :--- |
+| **Tập dữ liệu Anti-UAV RGB** | Bộ dữ liệu chuẩn Pascal VOC (ảnh JPEG, nhãn XML, file CSV chuỗi thời gian) | [Kaggle Dataset: anti-uav-rgb](https://www.kaggle.com/datasets/namnguyen171006/anti-uav-rgb) |
+| **Trọng số đã huấn luyện** | File trọng số tốt nhất `best_uav_model.keras` (~102.8 MB) | [Kaggle Dataset: uav-checkpoint](https://www.kaggle.com/datasets/namnguyen171006/uav-checkpoint) |
+
+---
+
+## 4. Kiến Trúc Mạng và Các Điểm Cải Tiến Cốt Lõi
 
 ```
 ĐẦU VÀO CHUỖI THỜI GIAN 9 KÊNH (640x640x9)
@@ -103,13 +192,13 @@ Kích thước: (80, 80, 1)       Kích thước: (80, 80, 2)       Kích thư�
 ```
 
 <div align="center">
-  <img src="assets/model_architecture.jpg" width="85%" alt="Sơ đồ Kiến trúc Tổng thể CenterNet RGB" />
-  <p><em>Hình 1: Sơ đồ kiến trúc tổng thể mô hình CenterNet RGB kết hợp Temporal Triplet, ResNet50v2, P2-FPN, Coordinate Attention và 3 CenterNet Heads.</em></p>
+  <img src="assets/cau_truc_model.jpg" width="95%" alt="Sơ đồ Kiến trúc Tổng thể CenterNet RGB" />
+  <p><em>Hình 1: Sơ đồ kiến trúc tổng thể mô hình CenterNet RGB phát hiện mục tiêu UAV kết hợp Temporal Triplet, ResNet50v2, P2-FPN, Coordinate Attention và 3 Đầu Decoupled Heads (Heatmap, Offset, Size).</em></p>
 </div>
 
 ---
 
-## 4. Cơ Sở Toán Học và Công Thức Thuật Toán
+## 5. Cơ Sở Toán Học và Công Thức Thuật Toán
 
 ### 4.1. Chuỗi Thời Gian 3 Thời Điểm (Temporal Triplet)
 Thay vì sử dụng các mạng tính luồng quang học phức tạp tiêu tốn tài nguyên, mô hình ghép trực tiếp 3 khung hình ảnh visible liên tiếp cách đều nhau một khoảng thời gian $\Delta t$:
@@ -230,7 +319,7 @@ Khoảng cách NWD duy trì độ mượt ngay cả khi 2 hộp bọc không gia
 
 ---
 
-## 5. Kết Quả Thực Nghiệm và Quá Trình Hội Tụ Huấn Luyện
+## 6. Kết Quả Thực Nghiệm và Quá Trình Hội Tụ Huấn Luyện
 
 Mô hình được huấn luyện trong 9 epochs trên môi trường Kaggle sử dụng một GPU NVIDIA Tesla P100 trước khi đạt trạng thái hội tụ tối ưu:
 
@@ -266,102 +355,35 @@ Mô hình được đánh giá định lượng độc lập trên **3.000 frame
 
 ---
 
-## 6. Bộ Sưu Tập Hình Ảnh Khoa Học (Scientific Figures)
+## 7. Bộ Sưu Tập Hình Ảnh Khoa Học (Scientific Figures)
 
-| Sơ Đồ Kiến Trúc Tổng Thể | Cấu Trúc Kim Tự Tháp P2-FPN |
+| Sơ Đồ Kiến Trúc Tổng Thể CenterNet RGB | Cấu Trúc Kim Tự Tháp P2-FPN |
 | :---: | :---: |
-| ![Kiến Trúc Tổng Thể](assets/model_architecture.jpg) | ![Cấu Trúc P2-FPN](assets/FPN.jpg) |
+| ![Kiến Trúc Tổng Thể](assets/cau_truc_model.jpg) | ![Cấu Trúc P2-FPN](assets/FPN.jpg) |
 
-| Chuỗi Triplet Thời Gian (Visible RGB) | Phân Bố Kích Thước Drone Trong Dataset |
+| Khối Phần Dư Pre-activation ResNet50v2 | Chuỗi Triplet Thời Gian (Visible RGB) |
 | :---: | :---: |
-| ![Triplet Thời Gian](assets/fig1_rgb_temporal_triplet.jpg) | ![Phân Bố Kích Thước](assets/fig2_drone_scale_distribution.jpg) |
+| ![Khối Phần Dư ResNet50v2](assets/model_architecture.jpg) | ![Triplet Thời Gian](assets/fig1_rgb_temporal_triplet.jpg) |
 
-| So Sánh Chú Ý: SE-Net vs Coordinate Attention | Chi Tiết Cơ Chế Coordinate Attention (CA) |
+| Phân Bố Kích Thước Drone Trong Dataset | So Sánh Chú Ý: SE-Net vs Coordinate Attention |
 | :---: | :---: |
-| ![So Sánh SE vs CA](assets/comparison.jpg) | ![Cơ Chế CA](assets/CA.jpg) |
+| ![Phân Bố Kích Thước](assets/fig2_drone_scale_distribution.jpg) | ![So Sánh SE vs CA](assets/comparison.jpg) |
 
-| Động Học Khắc Phục Hiện Tượng Dying ReLU | Bề Mặt Gaussian Heatmap & Giảm Chấn Mềm |
+| Chi Tiết Cơ Chế Coordinate Attention (CA) | Động Học Khắc Phục Hiện Tượng Dying ReLU |
 | :---: | :---: |
-| ![Dying ReLU](assets/relu_dying.jpg) | ![Gaussian Heatmap](assets/gaussian.jpg) |
+| ![Cơ Chế CA](assets/CA.jpg) | ![Dying ReLU](assets/relu_dying.jpg) |
 
-| Biểu Đồ Hội Tụ Hàm Mất Mát (Loss Curve) | Đường Cong Precision - Recall (PR Curve) |
+| Bề Mặt Gaussian Heatmap & Giảm Chấn Mềm | Biểu Đồ Hội Tụ Hàm Mất Mát (Loss Curve) |
 | :---: | :---: |
-| ![Biểu Đồ Loss](assets/loss_curve.jpg) | ![Đường Cong PR](assets/pr_curve.jpg) |
+| ![Gaussian Heatmap](assets/gaussian.jpg) | ![Biểu Đồ Loss](assets/loss_curve.jpg) |
+
+| Đường Cong Precision - Recall (PR Curve) | Giải Mã Cực Đại Địa Phương MaxPool 3x3 |
+| :---: | :---: |
+| ![Đường Cong PR](assets/pr_curve.jpg) | ![Giải Mã Cực Đại](assets/LMD.jpg) |
 
 | Mẫu Dự Đoán Kiểm Thử Định Tính | So Sánh Phóng To Ground Truth vs Dự Báo |
 | :---: | :---: |
 | ![Mẫu Kiểm Thử](assets/fig_visual_test_samples.jpg) | ![So Sánh Bounding Box](assets/fig_gt_vs_pred_comparison.jpg) |
-
----
-
-## 7. Thống Kê Dữ Liệu và Trọng Số Huấn Luyện Sẵn
-
-### 7.1. Thống Kê Chi Tiết Bộ Dữ Liệu Ban Đầu (Raw Anti-UAV-RGB Videos)
-
-Bộ dữ liệu Anti-UAV chuẩn (Visible RGB stream) là tập dữ liệu video quang học độ phân giải cao ghi lại chuyển động thực tế của nhiều chủng loại UAV/Drone trong không gian đa dạng (đô thị, đồi núi, mặt nước, bầu trời quang và mây mù):
-
-| Phân Vùng Dữ Liệu (Split) | Số Lượng Video (Chuỗi) | Tổng Khung Hình (Frames) | Khung Hình Có UAV (Dương Tính) | Khung Hình Che Khuất / Mất Dấu (Âm Tính) | Tỷ Lệ Hiện Diện UAV |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Tập Huấn Luyện (Train)** | **160** videos (50.3%) | **149.528** frames | 142.192 frames | 7.336 frames | **95.1%** |
-| **Tập Kiểm Định (Val)** | **67** videos (21.1%) | **61.999** frames | 58.302 frames | 3.697 frames | **94.0%** |
-| **Tập Kiểm Thử (Test)** | **91** videos (28.6%) | **85.374** frames | 79.724 frames | 5.650 frames | **93.4%** |
-| **Tổng Cộng Toàn Bộ Dataset** | **318** videos (100%) | **296.901** frames | **280.218** frames | **16.683** frames | **94.38%** |
-
-* **Đặc tính kỹ thuật video gốc**: Độ phân giải gốc **$1920 \times 1080$ (Full HD)**, tốc độ quay **25 FPS**, tổng thời lượng tích lũy đạt xấp xỉ **38.4 giờ** video tác chiến liên tục.
-* **Tổng số nhãn Bounding Box gốc**: **280.067 hộp bao**, trong đó kích thước trung bình là $\bar{w} = 125.5\text{ px}$, $\bar{h} = 63.3\text{ px}$, diện tích trung bình $\bar{A} = 8.642\text{ px}^2$ (chỉ chiếm **$0.417\%$** diện tích toàn khung hình Full HD).
-* **Phân bố các thuộc tính thử thách môi trường tác chiến (Challenge Attributes)**:
-  - **Thermal Crossover (TC)**: 192 videos (**60.4%**) - Nhiệt độ và quang học bị giao thoa nền nhiệt.
-  - **Fast Motion (FM)**: 122 videos (**38.4%**) - Drone cơ động chuyển hướng và bay với gia tốc lớn.
-  - **Low Illumination (LI)**: 117 videos (**36.8%**) - Điều kiện ánh sáng yếu, bình minh, hoàng hôn hoặc ban đêm.
-  - **Scale Variation (SV)**: 69 videos (**21.7%**) - Drone thay đổi cự ly tiếp cận, biến thiên quy mô kích thước liên tục.
-  - **Low Resolution (LR)**: 48 videos (**15.1%**) - Mục tiêu ở khoảng cách cực xa, chi tiết cấu trúc bị mờ.
-  - **Out-of-View (OV)**: 39 videos (**12.3%**) - Drone bay hoàn toàn ra khỏi tầm nhìn camera quang học.
-  - **Occlusion (OC)**: 12 videos (**3.8%**) - Drone bị cây cối, cột đèn hoặc vật cản che khuất tầm nhìn.
-
----
-
-### 7.2. Thống Kê Bộ Dữ Liệu Pascal VOC Sau Tiền Xử Lý Chuỗi Thời Gian (Temporal Triplet)
-
-Nhằm loại bỏ tính dư thừa thông tin giữa các khung hình liên tiếp ở tần số 25 FPS và trích xuất trực tiếp động học chuyển động mà không cần mạng Optical Flow, hệ thống thực hiện downsampling theo bước nhảy thời gian (temporal stride) và ghép nối 3 khung hình liên tiếp thành cấu trúc **Temporal Triplet**:
-
-$$X_{\text{temporal}} = \left[ I_{t - \Delta t},\, I_t,\, I_{t + \Delta t} \right] \in \mathbb{R}^{640 \times 640 \times 9}$$
-
-| Phân Vùng Xử Lý (Split) | Số Bộ Ba (Mẫu Triplets) | Khung Hình JPEG Thực Tế | Tỷ Lệ Mẫu Dương Tính (Có Drone) | Mẫu Nền (Hard Negative) | Tỷ Lệ Phân Chia |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Tập Huấn Luyện (Train)** | **18.683** mẫu bộ ba | **56.049** frames ảnh | 17.749 mẫu (~95.0%) | 934 mẫu (~5.0%) | **75.0%** |
-| **Tập Kiểm Định (Val)** | **6.228** mẫu bộ ba | **18.684** frames ảnh | 5.854 mẫu (~94.0%) | 374 mẫu (~6.0%) | **25.0%** |
-| **Tổng Cộng (Train + Val)** | **24.911** mẫu bộ ba | **74.733** frames ảnh | **23.603** mẫu (~94.7%) | **1.308** mẫu (~5.3%) | **100%** |
-
-* **Phân bố kích thước Bounding Box trong tập huấn luyện (Chuẩn MS-COCO - Minh chứng tại Hình 2)**:
-  - **Tiny / Small (< 32² px = 1024 px²)**: **1.7%** mục tiêu siêu nhỏ (được mạng P2-FPN giữ vững độ phân giải cao để phát hiện).
-  - **Medium (32² px² ≤ Diện tích < 96² px²)**: **68.6%** mục tiêu tầm trung (phân khúc chủ đạo của drone chiến thuật).
-  - **Large (Diện tích ≥ 96² px² = 9216 px²)**: **29.7%** mục tiêu cự ly gần.
-* **Cơ sở xác lập tham số hình học Logit Prior Bias**:
-  - Tỷ lệ chuẩn hóa trung bình thực tế: $\bar{w}_{\text{norm}} = 125.5 / 1920 = 0.0654$, $\bar{h}_{\text{norm}} = 63.3 / 1080 = 0.0586 \implies s_0 \approx 0.065$.
-  - Khởi tạo Logit Prior Bias nhánh Size Head: $b_0 = \ln\left(\frac{s_0}{1 - s_0}\right) = \ln\left(\frac{0.065}{0.935}\right) \approx -2.66$, bảo đảm đạo hàm Sigmoid luôn dương và loại bỏ hoàn toàn hiện tượng Dying ReLU.
-
----
-
-### 7.3. Bảng So Sánh Đối Chiếu Toàn Diện (Raw Video vs. Processed Temporal VOC)
-
-| Tiêu Chí So Sánh | Dữ Liệu Gốc (Raw Anti-UAV RGB) | Dữ Liệu Sau Xử Lý (Temporal Triplet VOC) | Ý Nghĩa Kỹ Thuật & Tác Chiến |
-| :--- | :--- | :--- | :--- |
-| **Định dạng lưu trữ** | Video MP4 (H.264) + Nhãn JSON chuỗi | Khung ảnh JPEG + Nhãn Pascal VOC XML + CSV | Chuẩn hóa định dạng cho pipeline TensorFlow / Keras |
-| **Số lượng tệp / mẫu** | 318 video clips (296.901 frames) | 24.911 mẫu bộ ba (74.733 frames trích xuất) | Loại bỏ dư thừa frame tĩnh, tối ưu hóa thời gian huấn luyện |
-| **Độ phân giải khung hình** | $1920 \times 1080$ px (Full HD) | $640 \times 640$ px (Bi-linear resize) | Giảm dung lượng VRAM GPU nhưng bảo tồn chi tiết bằng P2-FPN |
-| **Cấu trúc Tensor đầu vào** | 1 khung hình đơn lẻ (3 kênh RGB) | Ghép chuỗi thời gian 3 thời điểm (9 kênh RGB) | Trích xuất trực tiếp vector vận tốc tức thời không cần Optical Flow |
-| **Mẫu âm tính (Hard Negatives)**| 16.683 frames (chiếm 5.62%) | 1.308 mẫu bộ ba không có drone | Rèn luyện mô hình triệt tiêu cảnh báo giả trên nền mây và nhà cao tầng |
-| **Phân chia dữ liệu** | 160 Train / 67 Val / 91 Test | 18.683 Train / 6.228 Val (Tỷ lệ 75/25) | Phân tầng dữ liệu độc lập theo từng chuỗi bay |
-| **Mục đích sử dụng** | Lưu trữ thô và suy luận toàn chuỗi video | Huấn luyện và đánh giá kiểm định trực tiếp mạng nơ-ron | Đạt tốc độ hội tụ nhanh vượt bậc qua 9 Epochs |
-
----
-
-### 7.4. Liên Kết Tải Về Dữ Liệu và Trọng Số Tiền Huấn Luyện
-
-| Tài Nguyên | Mô Tả Kỹ Thuật | Đường Dẫn Tải Về |
-| :--- | :--- | :--- |
-| **Tập dữ liệu Anti-UAV RGB** | Bộ dữ liệu chuẩn Pascal VOC (ảnh JPEG, nhãn XML, file CSV chuỗi thời gian) | [Kaggle Dataset: anti-uav-rgb](https://www.kaggle.com/datasets/namnguyen171006/anti-uav-rgb) |
-| **Trọng số đã huấn luyện** | File trọng số tốt nhất `best_uav_model.keras` (~102.8 MB) | [Kaggle Dataset: uav-checkpoint](https://www.kaggle.com/datasets/namnguyen171006/uav-checkpoint) |
 
 ---
 
@@ -378,7 +400,7 @@ $$X_{\text{temporal}} = \left[ I_{t - \Delta t},\, I_t,\, I_{t + \Delta t} \righ
 ├── demo.py                        # Kịch bản suy luận thời gian thực và Tactical HUD
 ├── config.py                      # Chuyển tiếp cấu hình hệ thống
 ├── report_anti_uav_centernet.tex  # Báo cáo khoa học định dạng LaTeX chuẩn mực
-├── report_anti_uav_centernet.pdf  # Báo cáo khoa học đã biên dịch (19 trang đầy đủ hình ảnh)
+├── report_anti_uav_centernet.pdf  # Báo cáo khoa học đã biên dịch (24 trang đầy đủ hình ảnh)
 │
 ├── assets/                        # Toàn bộ hình ảnh khoa học, biểu đồ và video thử nghiệm
 │   ├── demo_videos/               # 6 video demo tác chiến (kèm ảnh động GIF và video MP4)
@@ -394,7 +416,8 @@ $$X_{\text{temporal}} = \left[ I_{t - \Delta t},\, I_t,\, I_{t + \Delta t} \righ
 │   │   ├── test_demo_large_1_test_074.mp4   # Video gốc Drone Lớn 1
 │   │   ├── test_demo_large_2_test_075.gif   # Ảnh động GIF Drone Lớn 2 (Sequence test_075)
 │   │   └── test_demo_large_2_test_075.mp4   # Video gốc Drone Lớn 2
-│   ├── model_architecture.jpg     # Sơ đồ kiến trúc tổng thể
+│   ├── cau_truc_model.jpg         # Sơ đồ kiến trúc tổng thể CenterNet RGB
+│   ├── model_architecture.jpg     # Sơ đồ so sánh Residual Block v1 vs Pre-activation Residual Block v2
 │   ├── FPN.jpg                    # Cấu trúc kim tự tháp đặc trưng P2-FPN
 │   ├── comparison.jpg             # So sánh SE-Net vs Coordinate Attention
 │   ├── CA.jpg                     # Cơ chế Coordinate Attention
