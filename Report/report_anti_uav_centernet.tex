@@ -51,7 +51,7 @@ Phát hiện và bám bắt các phương tiện bay không người lái (UAV) 
 
 Báo cáo này trình bày thiết kế và triển khai hoàn chỉnh một hệ thống \textbf{CenterNet Anchor-Free thuần Visible RGB} giải quyết triệt để các hạn chế trên. Mô hình tích hợp: 
 (1) Chuỗi đầu vào thời gian \textit{Temporal Triplet} 9 kênh $(I_{t-1}, I_t, I_{t+1})$ nắm bắt tức thời vector vận tốc mà không cần tính toán Optical Flow; 
-(2) Mạng kim tự tháp đặc trưng độ phân giải cao \textit{P2-FPN} kết hợp cơ chế chú ý định hướng không gian \textit{Coordinate Attention}; 
+(2) Mạng kim tự tháp đặc trưng độ phân giải cao \textit{FPN} kết hợp cơ chế chú ý định hướng không gian \textit{Coordinate Attention}; 
 (3) Đột phá giải quyết triệt để hiện tượng \textit{Dying ReLU} bằng cách tái cấu trúc nhánh kích thước sang hàm kích hoạt \textit{Sigmoid} kết hợp \textit{Khởi tạo Phân phối Tiền nghiệm Logit Prior Initialization} ($b_0 = -2.66$ suy dẫn từ giá trị thực nghiệm $s_0 = 0.065$); và (4) Hệ thống hàm mất mát đa nhiệm tối ưu kết hợp \textit{Gaussian Focal Loss}, \textit{Masked L1 Loss} và \textit{Normalized Gaussian Wasserstein Distance (NWD)}. 
 
 Thực nghiệm trên bộ dữ liệu Anti-UAV chuẩn qua 9 epoch trên GPU Tesla P100 minh chứng sự hội tụ vượt bậc: Total Loss giảm $81.8\%$ ($3.2777 \rightarrow 0.5959$). Đánh giá độc lập trên 3.000 frames kiểm thử tiêu biểu với ngưỡng tin cậy $\text{Conf} \ge 0.4$ ghi nhận: Precision đạt đỉnh \textbf{99.85\%} (triệt tiêu gần như hoàn toàn báo động giả), Recall đạt \textbf{69.12\%}, F1-Score đạt \textbf{81.69\%}, mAP@0.5 đạt \textbf{76.31\%}, NWD-mAP cho drone nhỏ đạt \textbf{63.84\%}, sai số tâm trung bình chỉ \textbf{4.17 pixels} và tốc độ suy luận đạt \textbf{21.4 FPS} trên GPU (thời gian xử lý 2.34 phút cho 3.000 frames), đáp ứng trọn vẹn yêu cầu tác chiến thời gian thực. Đặc biệt, nghiên cứu đã hiện thực hóa tối ưu hóa lượng tử hóa bán chính xác FP16 phục vụ triển khai thiết bị biên (NVIDIA Jetson Nano): giảm $50.36\%$ kích thước mô hình (từ $102.90\text{ MB} \rightarrow 51.08\text{ MB}$), tăng tốc độ suy luận lên \textbf{33.8 FPS} (vượt chuẩn thời gian thực $30\text{ FPS}$) trong khi bảo toàn xuất sắc mAP@0.5 ở mức \textbf{92.26\%} và NWD-mAP ở mức \textbf{86.42\%}, thiết lập chuỗi triển khai biên hoàn chỉnh thông qua chuẩn ONNX và TensorRT.
@@ -154,14 +154,14 @@ Công trình này nghiên cứu, thiết kế và thực nghiệm thành công h
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.98\linewidth]{cau_truc_model.jpg}
-    \caption{Sơ đồ kiến trúc tổng thể mô hình CenterNet RGB phát hiện và bám bắt UAV thời gian thực: Đầu vào chuỗi thời gian 3 khung hình Temporal Triplet 9 kênh ($640 \times 640 \times 9$), mạng cơ sở ResNet-50v2 Pre-activation, mạng kim tự tháp đặc trưng P2-FPN độ phân giải cao kết hợp cơ chế chú ý toạ độ Coordinate Attention (CA), và 3 nhánh dự đoán Anchor-Free tách biệt (Heatmap, Offset, Size).}
+    \caption{Sơ đồ kiến trúc tổng thể mô hình CenterNet RGB phát hiện và bám bắt UAV thời gian thực: Đầu vào chuỗi thời gian 3 khung hình Temporal Triplet 9 kênh ($640 \times 640 \times 9$), mạng cơ sở ResNet-50v2 Pre-activation, mạng kim tự tháp đặc trưng FPN độ phân giải cao kết hợp cơ chế chú ý toạ độ Coordinate Attention (CA), và 3 nhánh dự đoán Anchor-Free tách biệt (Heatmap, Offset, Size).}
     \label{fig:overall_architecture}
 \end{figure}
 
 Các đóng góp khoa học và kỹ thuật trọng tâm của công trình bao gồm:
 \begin{enumerate}
     \item \textbf{Cơ chế ghép chuỗi thời gian Temporal Triplet 9 kênh:} Xây dựng tensor $X_{\text{temporal}} = [I_{t - \Delta t}, I_t, I_{t + \Delta t}] \in \mathbb{R}^{640 \times 640 \times 9}$, cho phép các bộ lọc tích chập ở các tầng nông tự động trích xuất trực tiếp vector vận tốc và gia tốc tức thời của drone mà không cần mạng Optical Flow hay LSTM nặng nề.
-    \item \textbf{Kiến trúc P2-FPN kết hợp Chú ý Toạ độ Coordinate Attention:} Mở rộng kim tự tháp đặc trưng xuống cấp độ phân giải cao P2 (stride 8, kích thước $80 \times 80$) kết hợp cơ chế chú ý định hướng 1D theo hai trục ngang và dọc, bảo tồn trọn vẹn vị trí không gian của các drone siêu nhỏ ($< 32^2\text{ px}$).
+    \item \textbf{Kiến trúc FPN kết hợp Chú ý Toạ độ Coordinate Attention:} Mở rộng kim tự tháp đặc trưng xuống cấp độ phân giải cao (stride 8, kích thước $80 \times 80$) kết hợp cơ chế chú ý định hướng 1D theo hai trục ngang và dọc, bảo tồn trọn vẹn vị trí không gian của các drone siêu nhỏ ($< 32^2\text{ px}$).
     \item \textbf{Đột phá giải quyết triệt để hiện tượng Dying ReLU:} Phân tích giải tích nguyên nhân sụp đổ gradient ở nhánh dự đoán kích thước của CenterNet gốc, từ đó đề xuất giải pháp thay bằng hàm \textit{Sigmoid} kết hợp \textit{Khởi tạo Logit Prior Initialization} ($b_0 = -2.66$) suy dẫn từ thống kê thực nghiệm phân bố kích thước $s_0 = 0.065$, giúp mạng hội tụ mượt mà ngay từ epoch 1.
     \item \textbf{Hệ thống Hàm mất mát Tối ưu Đa nhiệm:} Ứng dụng \textit{Gaussian Focal Loss} xử lý mất cân bằng nền/tâm, kết hợp \textit{Masked L1 Offset Loss} và \textit{Normalized Gaussian Wasserstein Distance (NWD)} giải quyết triệt để hiện tượng mất độ mượt gradient của IoU truyền thống đối với vật thể siêu nhỏ.
     \item \textbf{Bộ giải mã NMS-Free và Bộ lọc Quán tính Trajectory EMA:} Tận dụng toán tử MaxPool $3 \times 3$ thay thế Non-Maximum Suppression (NMS) đạt độ phức tạp $O(HW)$ kết hợp làm mượt quỹ đạo, giúp hệ thống đạt tốc độ \textbf{21.4 FPS} trên GPU và chuyển trạng thái linh hoạt sang \texttt{OCCLUDED} khi drone bị che khuất ngắn hạn.
@@ -253,7 +253,7 @@ Bảng~\ref{tab:dataset_comparison} tổng hợp sự chuyển đổi từ tập
 \midrule
 Định dạng dữ liệu & Video MP4 (H.264) + JSON chuỗi & Ảnh JPEG + Pascal VOC XML + CSV & Chuẩn hóa định dạng cho pipeline TensorFlow / Keras \\
 Quy mô mẫu & 318 clips (296.901 frames) & 24.911 triplets (74.733 frames) & Loại bỏ dư thừa frame tĩnh, tối ưu hóa tốc độ huấn luyện \\
-Độ phân giải & $1920 \times 1080\text{ px}$ & $640 \times 640\text{ px}$ & Giảm tải VRAM GPU, thông tin chi tiết bảo toàn qua P2-FPN \\
+Độ phân giải & $1920 \times 1080\text{ px}$ & $640 \times 640\text{ px}$ & Giảm tải VRAM GPU, thông tin chi tiết bảo toàn qua FPN \\
 Cấu trúc Tensor & 1 khung hình đơn ($H \times W \times 3$) & Bộ ba thời gian ($H \times W \times 9$) & Trích xuất trực tiếp vector vận tốc không cần Optical Flow \\
 Hard Negatives & 16.683 frames âm tính ($5.62\%$) & 1.308 mẫu bộ ba không có drone & Huấn luyện mạng triệt tiêu cảnh báo giả trên mây và công trình \\
 Phân chia Dataset & 160 Train / 67 Val / 91 Test & 18.683 Train / 6.228 Val & Phân tầng độc lập theo chuỗi bay, ngăn ngừa rò rỉ dữ liệu \\
@@ -320,14 +320,14 @@ Cấu trúc Pre-activation tạo ra một \textit{đường cao tốc} dòng gra
     \item $C_5 \in \mathbb{R}^{20 \times 20 \times 2048}$ (Stride 32)
 \end{itemize}
 
-\subsection{Feature Pyramid Network P2-FPN Đa Tỉ Lệ}
+\subsection{Feature Pyramid Network (FPN) Đa Tỉ Lệ}
 Trong các mô hình phát hiện đối tượng thông thường (như FPN tiêu chuẩn hoặc YOLO), dự đoán thường được thực hiện ở các tầng $P_3, P_4, P_5$ (stride 8, 16, 32). Tuy nhiên, một drone có kích thước $16 \times 16$ pixel khi đưa xuống stride 16 sẽ chỉ còn $1 \times 1$ pixel, và tại stride 32 sẽ bị tiêu biến hoàn toàn.
 
-Để giải quyết vấn đề này, ta thiết kế kiến trúc \textbf{P2-FPN} mở rộng kết nối xuống tận tầng $C_2$ (stride 4) với số chiều kênh cố định $d = 128$ (Hình~\ref{fig:cau_truc_fpn}):
+Để giải quyết vấn đề này, ta thiết kế kiến trúc \textbf{FPN} mở rộng kết nối xuống tận tầng $C_2$ (stride 4) với số chiều kênh cố định $d = 128$ (Hình~\ref{fig:cau_truc_fpn}):
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.42\linewidth]{FPN.jpg}
-    \caption{Cấu trúc kim tự tháp đặc trưng P2-FPN mở rộng đa tỉ lệ ($M_i = C_i$).}
+    \caption{Cấu trúc kim tự tháp đặc trưng FPN mở rộng đa tỉ lệ ($M_i = C_i$).}
     \label{fig:cau_truc_fpn}
 \end{figure}
 Các luồng lan truyền từ trên xuống (top-down) và các tầng đặc trưng được thiết lập theo hệ thức:

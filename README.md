@@ -19,11 +19,10 @@
 5. [Cơ Sở Toán Học và Công Thức Thuật Toán](#5-cơ-sở-toán-học-và-công-thức-thuật-toán)
 6. [Kết Quả Thực Nghiệm và Quá Trình Hội Tụ Huấn Luyện](#6-kết-quả-thực-nghiệm-và-quá-trình-hội-tụ-huấn-luyện)
 7. [Nghiên Cứu Tối Ưu Hóa và Lượng Tử Hóa Mô Hình Cho Thiết Bị Biên (Model Quantization & Edge AI)](#7-nghiên-cứu-tối-ưu-hóa-và-lượng-tử-hóa-mô-hình-cho-thiết-bị-biên-model-quantization--edge-ai)
-8. [Bộ Sưu Tập Hình Ảnh Khoa Học](#8-bộ-sưu-tập-hình-ảnh-khoa-học-scientific-figures)
-9. [Cấu Trúc Thư Mục Dự Án](#9-cấu-trúc-thư-mục-dự-án)
-10. [Hướng Dẫn Cài Đặt và Khởi Chạy Nhanh](#10-hướng-dẫn-cài-đặt-và-khởi-chạy-nhanh)
-11. [Hướng Dẫn Sử Dụng Giao Diện Dòng Lệnh (CLI)](#11-hướng-dẫn-sử-dụng-giao-diện-dòng-lệnh-cli)
-12. [Giấy Phép và Tài Liệu Tham Khảo](#12-giấy-phép-và-tài-liệu-tham-khảo)
+8. [Cấu Trúc Thư Mục Dự Án](#8-cấu-trúc-thư-mục-dự-án)
+9. [Hướng Dẫn Cài Đặt và Khởi Chạy Nhanh](#9-hướng-dẫn-cài-đặt-và-khởi-chạy-nhanh)
+10. [Hướng Dẫn Sử Dụng Giao Diện Dòng Lệnh (CLI)](#10-hướng-dẫn-sử-dụng-giao-diện-dòng-lệnh-cli)
+11. [Giấy Phép và Tài Liệu Tham Khảo](#11-giấy-phép-và-tài-liệu-tham-khảo)
 
 ---
 
@@ -52,7 +51,7 @@ Nhận thức rõ các rào cản trên, dự án này đưa ra quyết định 
 
 ### 1.3. Các Đóng Góp Kỹ Thuật Cốt Lõi của Công Trình
 * **Ghép chuỗi thời gian 3 thời điểm (9 kênh RGB)**: Xây dựng tensor đầu vào $X_{\text{temporal}} = [I_{t-\Delta t}, I_t, I_{t+\Delta t}] \in \mathbb{R}^{640 \times 640 \times 9}$, cho phép các tầng tích chập trích xuất trực tiếp vận tốc và hướng chuyển động của drone mà không cần mạng luồng quang học (Optical Flow) hay mạng hồi quy tuần hoàn (RNN/LSTM) nặng nề.
-* **Cấu trúc đặc trưng P2-FPN kết hợp Coordinate Attention**: Mở rộng Features Pyramid Network xuống mức độ phân giải cao P2 (stride 8, kích thước bản đồ đặc trưng $80 \times 80$) kết hợp với cơ chế chú ý toạ độ (Coordinate Attention) theo 2 hướng ngang và dọc, bảo toàn tối đa thông tin vị trí của các vật thể siêu nhỏ ($< 32^2\text{px}$).
+* **Cấu trúc đặc trưng FPN kết hợp Coordinate Attention**: Mở rộng mạng kim tự tháp đặc trưng (Feature Pyramid Network) kết hợp với cơ chế chú ý toạ độ (Coordinate Attention) theo 2 hướng ngang và dọc, bảo toàn tối đa thông tin vị trí của các vật thể siêu nhỏ ($< 32^2\text{px}$).
 * **Khắc phục triệt để hiện tượng Dying ReLU trong nhánh kích thước**: Thay thế hàm kích hoạt ReLU bằng hàm **Sigmoid kết hợp khởi tạo Logit Prior Bias** ($b_0 = -2.66 \implies \sigma(b_0) \approx 0.065$). Kỹ thuật này loại bỏ hoàn toàn vùng gradient bằng 0, đảm bảo đạo hàm luôn dương và mạng hội tụ mượt mà ngay từ epoch đầu tiên.
 * **Bộ lọc quán tính quỹ đạo Trajectory EMA Filter**: Tích hợp thuật toán lọc quán tính quỹ đạo giúp duy trì bám bắt liên tục và chuyển sang trạng thái `OCCLUDED` khi drone bị che khuất ngắn hạn.
 * **Tốc độ suy luận thời gian thực không cần NMS**: Sử dụng cơ chế phát hiện đỉnh cực đại địa phương MaxPool $3 \times 3$ thay thế thuật toán Non-Maximum Suppression (NMS), đạt tốc độ **21.4 FPS** trên GPU (chỉ 2.34 phút cho 3.000 frames kiểm thử).
@@ -130,10 +129,15 @@ $$X_{\text{temporal}} = \left[ I_{t - \Delta t},\, I_t,\, I_{t + \Delta t} \righ
 | **Tập Kiểm Định (Val)** | **6.228** mẫu bộ ba | **18.684** frames ảnh | 5.854 mẫu (~94.0%) | 374 mẫu (~6.0%) | **25.0%** |
 | **Tổng Cộng (Train + Val)** | **24.911** mẫu bộ ba | **74.733** frames ảnh | **23.603** mẫu (~94.7%) | **1.308** mẫu (~5.3%) | **100%** |
 
-* **Phân bố kích thước Bounding Box trong tập huấn luyện (Chuẩn MS-COCO - Minh chứng tại Hình 2)**:
-  - **Tiny / Small (< 32² px = 1024 px²)**: **1.7%** mục tiêu siêu nhỏ (được mạng P2-FPN giữ vững độ phân giải cao để phát hiện).
+* **Phân bố kích thước Bounding Box trong tập huấn luyện (Chuẩn MS-COCO - Minh chứng tại Hình 1)**:
+  - **Tiny / Small (< 32² px = 1024 px²)**: **1.7%** mục tiêu siêu nhỏ (được mạng FPN giữ vững độ phân giải cao để phát hiện).
   - **Medium (32² px² ≤ Diện tích < 96² px²)**: **68.6%** mục tiêu tầm trung (phân khúc chủ đạo của drone chiến thuật).
   - **Large (Diện tích ≥ 96² px² = 9216 px²)**: **29.7%** mục tiêu cự ly gần.
+
+<div align="center">
+  <img src="assets/fig2_drone_scale_distribution.jpg" width="85%" alt="Phân Bố Kích Thước Drone Trong Dataset" />
+  <p><em>Hình 1: Phân bố kích thước hộp bao Drone trong tập dữ liệu Anti-UAV theo phân loại chuẩn MS-COCO (Small: 1.7%, Medium: 68.6%, Large: 29.7%).</em></p>
+</div>
 * **Cơ sở xác lập tham số hình học Logit Prior Bias**:
   - Tỷ lệ chuẩn hóa trung bình thực tế: $\bar{w}_{\text{norm}} = 125.5 / 1920 = 0.0654$, $\bar{h}_{\text{norm}} = 63.3 / 1080 = 0.0586 \implies s_0 \approx 0.065$.
   - Khởi tạo Logit Prior Bias nhánh Size Head: $b_0 = \ln\left(\frac{s_0}{1 - s_0}\right) = \ln\left(\frac{0.065}{0.935}\right) \approx -2.66$, bảo đảm đạo hàm Sigmoid luôn dương và loại bỏ hoàn toàn hiện tượng Dying ReLU.
@@ -146,7 +150,7 @@ $$X_{\text{temporal}} = \left[ I_{t - \Delta t},\, I_t,\, I_{t + \Delta t} \righ
 | :--- | :--- | :--- | :--- |
 | **Định dạng lưu trữ** | Video MP4 (H.264) + Nhãn JSON chuỗi | Khung ảnh JPEG + Nhãn Pascal VOC XML + CSV | Chuẩn hóa định dạng cho pipeline TensorFlow / Keras |
 | **Số lượng tệp / mẫu** | 318 video clips (296.901 frames) | 24.911 mẫu bộ ba (74.733 frames trích xuất) | Loại bỏ dư thừa frame tĩnh, tối ưu hóa thời gian huấn luyện |
-| **Độ phân giải khung hình** | $1920 \times 1080$ px (Full HD) | $640 \times 640$ px (Bi-linear resize) | Giảm dung lượng VRAM GPU nhưng bảo tồn chi tiết bằng P2-FPN |
+| **Độ phân giải khung hình** | $1920 \times 1080$ px (Full HD) | $640 \times 640$ px (Bi-linear resize) | Giảm dung lượng VRAM GPU nhưng bảo tồn chi tiết bằng FPN |
 | **Cấu trúc Tensor đầu vào** | 1 khung hình đơn lẻ (3 kênh RGB) | Ghép chuỗi thời gian 3 thời điểm (9 kênh RGB) | Trích xuất trực tiếp vector vận tốc tức thời không cần Optical Flow |
 | **Mẫu âm tính (Hard Negatives)**| 16.683 frames (chiếm 5.62%) | 1.308 mẫu bộ ba không có drone | Rèn luyện mô hình triệt tiêu cảnh báo giả trên nền mây và nhà cao tầng |
 | **Phân chia dữ liệu** | 160 Train / 67 Val / 91 Test | 18.683 Train / 6.228 Val (Tỷ lệ 75/25) | Phân tầng dữ liệu độc lập theo từng chuỗi bay |
@@ -176,7 +180,7 @@ $$X_{\text{temporal}} = \left[ I_{t - \Delta t},\, I_t,\, I_{t + \Delta t} \righ
                        Stage 4 (C5: 20x20x2048) <── Stage 3 (C4: 40x40x1024)
                                     │
                                     ▼
-                 MẠNG KIM TỰ THÁP P2-FPN VỚI COORDINATE ATTENTION
+                 MẠNG KIM TỰ THÁP FPN VỚI COORDINATE ATTENTION
   Tích chập 1x1 ngang + Lấy mẫu ngược Top-Down + Chú ý toạ độ CA(P2) & CA(P3)
                                     │
                                     ▼
@@ -196,14 +200,19 @@ Kích thước: (80, 80, 1)       Kích thước: (80, 80, 2)       Kích thư�
 
 <div align="center">
   <img src="assets/cau_truc_model.jpg" width="95%" alt="Sơ đồ Kiến trúc Tổng thể CenterNet RGB" />
-  <p><em>Hình 1: Sơ đồ kiến trúc tổng thể mô hình CenterNet RGB phát hiện mục tiêu UAV kết hợp Temporal Triplet, ResNet50v2, P2-FPN, Coordinate Attention và 3 Đầu Decoupled Heads (Heatmap, Offset, Size).</em></p>
+  <p><em>Hình 2: Sơ đồ kiến trúc tổng thể mô hình CenterNet RGB phát hiện mục tiêu UAV kết hợp Temporal Triplet, ResNet50v2, FPN, Coordinate Attention và 3 Đầu Decoupled Heads (Heatmap, Offset, Size).</em></p>
+</div>
+
+<div align="center">
+  <img src="assets/FPN.jpg" width="55%" alt="Cấu Trúc Mạng FPN Đa Tỉ Lệ" />
+  <p><em>Hình 3: Cấu trúc mạng kim tự tháp đặc trưng FPN đa tỉ lệ kết nối xuống tầng C2 (stride 4) kết hợp cơ chế chú ý tọa độ Coordinate Attention.</em></p>
 </div>
 
 ---
 
 ## 5. Cơ Sở Toán Học và Công Thức Thuật Toán
 
-### 4.1. Chuỗi Thời Gian 3 Thời Điểm (Temporal Triplet)
+### 5.1. Chuỗi Thời Gian 3 Thời Điểm (Temporal Triplet)
 Thay vì sử dụng các mạng tính luồng quang học phức tạp tiêu tốn tài nguyên, mô hình ghép trực tiếp 3 khung hình ảnh visible liên tiếp cách đều nhau một khoảng thời gian $\Delta t$:
 
 $$X_{\text{temporal}} = \left[ I_{t - \Delta t},\, I_t,\, I_{t + \Delta t} \right] \in \mathbb{R}^{H \times W \times 9}$$
@@ -215,7 +224,7 @@ Trong đó:
 
 ---
 
-### 4.2. Cơ Chế Chú Ý Toạ Độ (Coordinate Attention)
+### 5.2. Cơ Chế Chú Ý Toạ Độ (Coordinate Attention)
 Cơ chế Squeeze-and-Excitation (SE) thông thường nén toàn bộ không gian thành một vector qua phép lấy trung bình toàn cục:
 $$\mathbf{z} = \frac{1}{H \times W} \sum_{i=1}^H \sum_{j=1}^W x_c(i, j)$$
 Cách tiếp cận này làm mất hoàn toàn toạ độ không gian của vật thể nhỏ. Cơ chế Coordinate Attention phân rã phép nén không gian 2D thành hai phép tính 1D dọc theo trục ngang và trục dọc:
@@ -236,7 +245,7 @@ $$y_c(i, j) = x_c(i, j) \times g_c^h(i) \times g_c^w(j)$$
 
 ---
 
-### 4.3. Lưới Nhiệt Gaussian Ground Truth
+### 5.3. Lưới Nhiệt Gaussian Ground Truth
 Với mỗi nhãn hộp bọc drone $[x_1, y_1, x_2, y_2]$, toạ độ tâm liên tục trên bản đồ đặc trưng tỉ lệ $R = 8$ ($80 \times 80$) được xác định bởi:
 
 $$p_x = \frac{x_1 + x_2}{2 \cdot R}, \qquad p_y = \frac{y_1 + y_2}{2 \cdot R}$$
@@ -249,7 +258,7 @@ Bán kính phân tán $\sigma_p$ được điều chỉnh linh hoạt theo diệ
 
 ---
 
-### 4.4. Khắc Phục Triệt Để Hiện Tượng Dying ReLU Trong Nhánh Kích Thước (Size Head)
+### 5.4. Khắc Phục Triệt Để Hiện Tượng Dying ReLU Trong Nhánh Kích Thước (Size Head)
 
 Trong các mô hình CenterNet nguyên bản, kích thước hộp bọc được dự đoán bằng hàm kích hoạt `ReLU`:
 
@@ -279,7 +288,7 @@ Nhờ giá trị khởi tạo $b_0 = -2.66$, ngay tại bước lặp đầu ti�
 
 ---
 
-### 4.5. Hàm Mất Mát (Multi-Task Loss Functions)
+### 5.5. Hàm Mất Mát (Multi-Task Loss Functions)
 
 Hàm mục tiêu tổng hợp của hệ thống gồm 3 thành phần Loss:
 
@@ -356,7 +365,10 @@ Mô hình được đánh giá định lượng độc lập trên **3.000 frame
 | **Sai số tâm (Center Error)** | **4.17 pixels** | Sai số tâm trung bình trên toàn khung hình $1920 \times 1080$ |
 | **Tốc độ suy luận (Inference)** | **21.4 FPS** | Tốc độ xử lý thời gian thực trên GPU (hoàn tất 3.000 frames trong 2.34 phút) |
 
----
+<div align="center">
+  <img src="assets/fig_gt_vs_pred_comparison.jpg" width="90%" alt="So Sánh Phóng To Ground Truth vs Dự Báo" />
+  <p><em>Hình 4: Đánh giá định tính so sánh phóng to chi tiết giữa nhãn thực tế Ground Truth (xanh lá) và kết quả dự báo của mô hình (đỏ) trên các phân khúc kích thước Drone khác nhau.</em></p>
+</div>
 
 ---
 
@@ -369,26 +381,34 @@ Tuy nhiên, việc triển khai mô hình học sâu CenterNet trên Jetson Nano
 1. **Dung lượng và băng thông bộ nhớ eo hẹp**: Jetson Nano sở hữu CPU 4 nhân ARM Cortex-A57 @ 1.43 GHz, GPU 128 lõi Maxwell (compute capability 5.3) và bộ nhớ thống nhất (UMA) 4GB LPDDR4 64-bit chia sẻ chung giữa CPU, GPU và hệ điều hành Linux với băng thông chỉ **25.6 GB/s**.
 2. **Hiện tượng nghẽn băng thông bộ nhớ (Memory Bandwidth Bottleneck)**: Mô hình nguyên bản Full ResNet50v2 ở định dạng số thực 32-bit (FP32) chiếm **102.9 MB** dung lượng lưu trữ (26.96 triệu tham số). Khi nạp vào VRAM cùng với bộ đệm ánh xạ kích hoạt trung gian (activation buffers) qua các tầng FPN và 3 nhánh Head, mô hình chiếm dụng từ **1.5 GB đến 2.0 GB VRAM** (gần 50% tổng RAM vật lý). Việc liên tục đọc/ghi dữ liệu FP32 4 bytes qua bus 64-bit gây nghẽn băng thông nghiêm trọng, làm sụt giảm tốc độ suy luận dưới **15 FPS** và kích hoạt cơ chế bóp xung nhiệt độ (Thermal Throttling) trong giới hạn công suất 5W - 10W.
 
-Do đó, tối ưu hóa và lượng tử hóa mô hình là yêu cầu tiên quyết để hệ thống đạt tốc độ thời gian thực ($\ge 30	ext{ FPS}$) trên thiết bị biên.
+Do đó, tối ưu hóa và lượng tử hóa mô hình là yêu cầu tiên quyết để hệ thống đạt tốc độ thời gian thực ($\ge 30\text{ FPS}$) trên thiết bị biên.
 
 ### 7.2. Khái Niệm, Cơ Chế Số Học IEEE 754 và Lý Do Chọn Bán Chính Xác FP16
 **Lượng tử hóa mô hình (Model Quantization)** là kỹ thuật chuyển đổi trọng số $\mathbf{W}$ và các bản đồ kích hoạt $\mathbf{A}$ từ định dạng số thực độ chính xác cao sang định dạng biểu diễn có số lượng bit thấp hơn.
 
 Theo chuẩn IEEE 754:
-* **FP32 (Single Precision, 32-bit)**: 1 bit dấu ($s$), 8 bit số mũ ($e$), 23 bit định trị ($m$). Dải động rộng từ $\pm 1.18 	imes 10^{-38}$ đến $\pm 3.4 	imes 10^{38}$.
-  $$v_{	ext{FP32}} = (-1)^s 	imes 2^{e - 127} 	imes \left(1 + \sum_{i=1}^{23} m_i 2^{-i}ight)$$
-* **FP16 (Half Precision, 16-bit)**: 1 bit dấu ($s$), 5 bit số mũ ($e$), 10 bit định trị ($m$). Dải động chuẩn hóa $[\pm 6.10 	imes 10^{-5}, \pm 65504]$, số dưới chuẩn xuống tới $5.96 	imes 10^{-8}$.
-  $$v_{	ext{FP16}} = (-1)^s 	imes 2^{e - 15} 	imes \left(1 + \sum_{i=1}^{10} m_i 2^{-i}ight)$$
-* **Đối chiếu INT8 (8-bit)**: Lượng tử hóa đều affine $q = 	ext{clip}(\lfloor r/S ceil + Z, -128, 127)$ chỉ có 256 mức rời rạc.
+* **FP32 (Single Precision, 32-bit)**: 1 bit dấu ($s$), 8 bit số mũ ($e$), 23 bit định trị ($m$). Dải động rộng từ $\pm 1.18 \times 10^{-38}$ đến $\pm 3.4 \times 10^{38}$.
+
+$$v_{\text{FP32}} = (-1)^s \times 2^{e - 127} \times \left(1 + \sum_{i=1}^{23} m_i 2^{-i}\right)$$
+
+* **FP16 (Half Precision, 16-bit)**: 1 bit dấu ($s$), 5 bit số mũ ($e$), 10 bit định trị ($m$). Dải động chuẩn hóa $[\pm 6.10 \times 10^{-5}, \pm 65504]$, số dưới chuẩn xuống tới $5.96 \times 10^{-8}$.
+
+$$v_{\text{FP16}} = (-1)^s \times 2^{e - 15} \times \left(1 + \sum_{i=1}^{10} m_i 2^{-i}\right)$$
+
+* **Đối chiếu INT8 (8-bit)**: Lượng tử hóa đều affine $q = \text{clip}\left(\text{round}\left(\frac{r}{S}\right) + Z, -128, 127\right)$ chỉ có 256 mức rời rạc.
 
 **Lý Do Quyết Định Lựa Chọn FP16 (thay vì INT8):**
-1. **Bảo toàn độ nhạy Gaussian Heatmap cho micro-drone**: Nhánh dự đoán vị trí tâm drone mô hình hóa bằng phân bố Gauss $G(x, y) = \exp\left(-rac{(x-p_x)^2 + (y-p_y)^2}{2\sigma_p^2}ight)$. Với drone siêu nhỏ ($< 16	imes 16	ext{ px}$), bán kính $\sigma_p$ rất hẹp, giá trị xác suất ở vùng rìa tâm sụt cực nhanh về $10^{-3} - 10^{-4}$. Định dạng INT8 với bước lượng tử $\Delta pprox 0.0039$ sẽ làm tròn toàn bộ vùng này về 0, gây hiện tượng bẹt đỉnh phân bố và triệt tiêu khả năng phát hiện điểm cực đại cục bộ. FP16 bao quát trọn vẹn dải động học $(10^{-4} 	o 1.0)$, bảo toàn hình thái hàm Gauss.
+1. **Bảo toàn độ nhạy Gaussian Heatmap cho micro-drone**: Nhánh dự đoán vị trí tâm drone mô hình hóa bằng phân bố Gauss:
+
+$$G(x, y) = \exp\left( -\frac{(x - p_x)^2 + (y - p_y)^2}{2\sigma_p^2} \right)$$
+
+Với drone siêu nhỏ ($< 16 \times 16\text{ px}$), bán kính $\sigma_p$ rất hẹp, giá trị xác suất ở vùng rìa tâm sụt cực nhanh về $10^{-3} - 10^{-4}$. Định dạng INT8 với bước lượng tử $\Delta \approx 0.0039$ sẽ làm tròn toàn bộ vùng này về 0, gây hiện tượng bẹt đỉnh phân bố và triệt tiêu khả năng phát hiện điểm cực đại cục bộ. FP16 bao quát trọn vẹn dải động học $(10^{-4} \to 1.0)$, bảo toàn hình thái hàm Gauss.
 2. **Duy trì ổn định nhánh hồi quy kích thước Sigmoid Logit Prior**: Nhánh kích thước sử dụng $\hat{s} = \sigma(z)$ với bias khởi tạo $b_0 = -2.66$ ($s_0 = 0.065$). FP16 duy trì độ phân giải số học liên tục, ngăn ngừa hiện tượng cắt cụt biên và sai số lượng tử tích lũy.
 3. **Khai thác phần cứng GPU qua chỉ thị vector ghép đôi `half2`**: Kiến trúc GPU NVIDIA (kể cả Maxwell trên Jetson Nano và Turing/Ampere) hỗ trợ xử lý 2 phép tính số học FP16 trong cùng một chu kỳ xung nhịp qua chỉ thị vector ghép đôi `half2`, nhân đôi thông lượng tính toán lý thuyết so với FP32.
 4. **Giảm 50% dung lượng và băng thông**: Kích thước tệp giảm từ 102.9 MB xuống 51.08 MB mà không cần tập dữ liệu hiệu chuẩn phức tạp hay huấn luyện có nhận thức lượng tử (QAT).
 
 ### 7.3. Nghiên Cứu Thực Nghiệm Cắt Bỏ Tầng C5 (Stage 4 Pruning) và Phân Tích Sự Sụp Đổ Mô Hình
-Trong mạng xương sống ResNet50v2, riêng Stage 4 ($C_5$) chiếm tới 14.96 triệu tham số ($pprox 60\%$ tham số backbone). Nhóm nghiên cứu đã thực nghiệm cắt bỏ hoàn toàn tầng $C_5$, chỉ dùng $C_2, C_3, C_4$ đưa vào FPN nhằm nén kích thước xuống 40.6 MB.
+Trong mạng xương sống ResNet50v2, riêng Stage 4 ($C_5$) chiếm tới 14.96 triệu tham số ($\approx 60\%$ tham số backbone). Nhóm nghiên cứu đã thực nghiệm cắt bỏ hoàn toàn tầng $C_5$, chỉ dùng $C_2, C_3, C_4$ đưa vào FPN nhằm nén kích thước xuống 40.6 MB.
 
 **Bảng So Sánh Hiệu Năng 3 Mô Hình Thực Nghiệm:**
 
@@ -400,7 +420,7 @@ Trong mạng xương sống ResNet50v2, riêng Stage 4 ($C_5$) chiếm tới 14.
 
 **Nguyên Nhân Cốt Lõi Khiến Mô Hình Cắt Bỏ C5 Bị Sụp Đổ:**
 1. **Hiện tượng đói ngữ nghĩa tại đỉnh tháp FPN**: FPN dung hợp đặc trưng từ trên xuống (Top-down). Khi mất $C_5$, tầng đỉnh mới chỉ là $C_4$ (stride 16), các tầng phân giải cao $P_3, P_2$ phía dưới bị thiếu hụt nghiêm trọng đặc trưng ngữ nghĩa mức cao, mất khả năng phân biệt mục tiêu với nhiễu nền (đám mây, tán cây, chóp nhà).
-2. **Mất trường tiếp nhận (ERF) cho drone cự ly gần và cơ động nhanh**: Phân bố tập dữ liệu Anti-UAV cho thấy khoảng **29.7%** khung hình chứa drone ở cự ly gần hoặc cơ động nhanh ($32	imes 32$ đến $> 96	imes 96	ext{ px}$). $C_4$ không bao quát được toàn bộ cấu trúc drone, khiến **mAP@0.75 sụp đổ từ 50.78% xuống còn 7.40% (mất 85.4%)**.
+2. **Mất trường tiếp nhận (ERF) cho drone cự ly gần và cơ động nhanh**: Phân bố tập dữ liệu Anti-UAV cho thấy khoảng **29.7%** khung hình chứa drone ở cự ly gần hoặc cơ động nhanh ($32 \times 32$ đến $> 96 \times 96\text{ px}$). $C_4$ không bao quát được toàn bộ cấu trúc drone, khiến **mAP@0.75 sụp đổ từ 50.78% xuống còn 7.40% (mất 85.4%)**.
 3. **Độ bao quát Recall tụt dốc thê thảm**: Recall giảm từ 93.08% xuống 55.90%, tỷ lệ bỏ sót drone lên tới **44.1%**. Dù Precision đạt 99.44%, điều này chỉ cho thấy mô hình trở nên quá cực đoan: chỉ dám phát hiện khi mục tiêu cực kỳ rõ ràng, bỏ qua gần một nửa số lượng mục tiêu thực tế. Sai số tâm tăng từ 6.60 px lên 11.25 px (+70.5%).
 4. **Lượng tử hóa FP16 không thể phục hồi kiến trúc bị khuyết tật**: Khi lượng tử hóa Pruned C4 sang FP16, mAP@0.5 vẫn chỉ đạt 45.32%, chứng minh sự sụp đổ bắt nguồn từ khiếm khuyết biểu diễn không gian - ngữ nghĩa của backbone chứ không phải sai số số học.
 
@@ -414,11 +434,23 @@ Trong mạng xương sống ResNet50v2, riêng Stage 4 ($C_5$) chiếm tới 14.
   4. *Hỗ trợ số học FP16 phần cứng*: Tận dụng tối đa tập lệnh vector `half2`.
 * **Lý do sử dụng TensorFlow Lite trong giai đoạn kiểm chứng**: Tệp TensorRT Engine (`.engine`) phụ thuộc chặt chẽ vào vi kiến trúc phần cứng (không thể biên dịch trên GPU máy chủ Cloud như Tesla T4/P100 rồi đem chạy trên Maxwell Jetson Nano). TFLite FP16 Converter cung cấp môi trường kiểm chứng số học độc lập phần cứng (Hardware-Agnostic Arithmetic Verification) trên Cloud nhằm phát hiện sớm các nguy cơ tràn số hoặc suy hao phân phối trước khi nạp thiết bị.
 * **Vai trò trung tâm của định dạng chuẩn ONNX**: ONNX đóng vai trò là chiếc cầu nối vạn năng chuẩn công nghiệp (Opset 17) kết nối giữa môi trường huấn luyện Keras và trình biên dịch TensorRT:
-  $$\text{Keras FP32 Model (.keras)} \xrightarrow[\text{Opset 17}]{\text{tf2onnx}} \text{ONNX Model (.onnx)} \xrightarrow[\text{Maxwell sm\_53}]{\text{trtexec --fp16}} \text{TensorRT Engine (.engine)}$$
-  Tệp ONNX đã được xuất khẩu hoàn chỉnh: `Model_FP16/best_uav_model.onnx` (101.45 MB, Opset 17), sẵn sàng biên dịch trực tiếp trên Jetson Nano:
-  ```bash
-  trtexec --onnx=best_uav_model.onnx --saveEngine=best_uav_model_fp16.engine --fp16
-  ```
+
+```
+[ Keras FP32 Model (.keras) ]
+              │  tf2onnx (Opset 17)
+              ▼
+    [ ONNX Model (.onnx) ]
+              │  trtexec (--fp16, Maxwell sm_53)
+              ▼
+[ NVIDIA TensorRT Engine (.engine) ]
+```
+
+$$\text{Keras Model (.keras)} \xrightarrow[\text{Opset 17}]{\text{tf2onnx}} \text{ONNX Model (.onnx)} \xrightarrow[\text{FP16}]{\text{trtexec}} \text{TensorRT Engine (.engine)}$$
+
+Tệp ONNX đã được xuất khẩu hoàn chỉnh: `Model_FP16/best_uav_model.onnx` (101.45 MB, Opset 17), sẵn sàng biên dịch trực tiếp trên Jetson Nano:
+```bash
+trtexec --onnx=best_uav_model.onnx --saveEngine=best_uav_model_fp16.engine --fp16
+```
 
 ### 7.5. Đánh Giá Định Lượng Toàn Diện Mô Hình FP16 và Phân Tích Biểu Đồ Đối Chứng
 Dựa trên tệp nhật ký thực nghiệm `Model_FP16/model_fp16_benchmark_summary.txt`, mô hình gốc Full ResNet50 FP32 và mô hình lượng tử hóa bán chính xác Full ResNet50 FP16 được đánh giá đối chứng toàn diện trên cùng 3.000 khung hình kiểm thử tiêu biểu của bộ dữ liệu Anti-UAV:
@@ -436,14 +468,25 @@ Dựa trên tệp nhật ký thực nghiệm `Model_FP16/model_fp16_benchmark_su
 | **Độ trễ suy luận (Latency)** | $40.24\text{ ms}$ | $\mathbf{29.61\text{ ms}}$ | **Giảm 26.42%** (Nhanh hơn $10.63\text{ ms}$/frame) |
 | **Tốc độ khung hình (FPS)** | $24.9\text{ FPS}$ | $\mathbf{33.8\text{ FPS}}$ | **Tăng 35.74%** (Vượt chuẩn thời gian thực $> 30\text{ FPS}$) |
 
-| Biểu Đồ Đối Chứng 4 Thành Phần FP32 vs FP16 | Đường Cong Precision - Recall Mô Hình FP16 |
-| :---: | :---: |
-| ![Biểu Đồ Đối Chứng FP16](assets/model_fp16_comparison_charts.png) | ![Đường Cong PR FP16](assets/pr_curve_full_resnet50_fp16.png) |
-| *Hình 1: So sánh 4 khía cạnh: Dung lượng mô hình (MB), Tốc độ suy luận (FPS), Độ chính xác mAP@0.5 & NWD-mAP (%), Sai số tâm ngắm (pixels).* | *Hình 2: Đường cong PR của mô hình Full ResNet50 FP16 (mAP@0.5 = 92.26%, Precision = 96.56%, Recall = 92.99%).* |
+<div align="center">
+  <img src="assets/model_fp16_comparison_charts.png" width="90%" alt="Biểu Đồ Đối Chứng FP16" />
+  <p><em>Hình 5: Biểu đồ phân tích đối chứng toàn diện 4 thành phần giữa mô hình gốc Full ResNet50 FP32 và mô hình lượng tử hóa Full ResNet50 FP16: Dung lượng file mô hình (MB), Tốc độ suy luận (FPS), Độ chính xác mAP@0.5 và NWD-mAP (%), Sai số tâm ngắm trung bình (pixels).</em></p>
+</div>
+
+Dựa trên biểu đồ đối chứng trên, mô hình FP16 đạt 4 kết quả then chốt:
+1. **Dung lượng mô hình giảm chính xác một nửa**: Kích thước tệp giảm từ 102.90 MB xuống 51.08 MB (giảm 50.36%), giải phóng hoàn toàn áp lực băng thông bộ nhớ và không gian VRAM trên thiết bị biên.
+2. **Tốc độ suy luận bứt phá vượt ngưỡng thời gian thực chuẩn**: Thời gian xử lý mỗi khung hình giảm mạnh từ 40.24 ms xuống 29.61 ms (giảm 26.42%), đẩy tốc độ suy luận từ 24.9 FPS lên 33.8 FPS (tăng 35.74%). Tốc độ này chính thức vượt qua ngưỡng chuẩn thời gian thực 30 FPS của các cảm biến camera giám sát tiêu chuẩn.
+3. **Độ chính xác phát hiện mAP@0.5 và NWD-mAP được bảo toàn hoàn hảo**: Chỉ số mAP@0.5 đạt 92.26% (so với 92.23% của bản FP32), và chỉ số NWD-mAP@0.5 chuyên biệt cho drone siêu nhỏ giữ nguyên tuyệt đối 86.42%. Điều này chứng minh rằng việc biểu diễn bằng định dạng bán chính xác 16-bit hoàn toàn không làm suy giảm khả năng trích xuất đặc trưng của mạng nơ-ron.
+4. **Sai số tâm ngắm trung bình duy trì độ chính xác cực cao**: Độ lệch tâm ngắm chỉ tăng nhẹ vi mô 0.34 pixel (từ 6.60 px lên 6.94 px trên khung hình chuẩn Full HD 1080p). Độ lệch này hoàn toàn nằm trong dung sai cho phép của các hệ thống bám bắt và điều khiển hỏa lực.
+
+<div align="center">
+  <img src="assets/pr_curve_full_resnet50_fp16.png" width="85%" alt="Đường Cong PR FP16" />
+  <p><em>Hình 6: Đường cong Precision - Recall của mô hình lượng tử hóa Full ResNet50 FP16 trên tập kiểm thử Anti-UAV (mAP@0.5 = 92.26%, Precision = 96.56%, Recall = 92.99%).</em></p>
+</div>
 
 **Phân Tích Chuyên Sâu Đồ Thị PR Curve Của FP16:**
 * **Vết sụt nhọn tại điểm cắt cực hạn $k=3$**: Khi sắp xếp các dự đoán theo Confidence Score giảm dần, tại điểm cắt cực kỳ khắt khe chỉ lấy $k=3$ dự đoán có độ tin cậy cao nhất trên toàn bộ 3.000 khung hình, có 2 trường hợp dự đoán đúng (TP) và 1 trường hợp dự đoán nhầm (FP) do vi sai làm tròn số học ở định dạng 16-bit. Công thức tính Precision thô tại điểm này là $\text{Precision}(k=3) = \frac{2}{2+1} = \frac{2}{3} \approx 0.667$.
-* **Đường bao trên đơn điệu PASCAL VOC**: Ngay khi mở rộng ngưỡng sang $k \ge 4$, đường cong vọt lên $0.98 - 0.99$ và duy trì đường nằm ngang hoàn hảo trên toàn bộ dải Recall từ $0.05$ đến $0.85$. Theo quy tắc Monotonic Upper Envelope Interpolation $P_{\text{interp}}(r) = \max_{\tilde{r} \ge r} P(\tilde{r})$, phần lõm cục bộ tại $r \le 0.005$ được làm phẳng hoàn toàn thành $0.99$, bảo toàn diện tích dưới đường cong AUC và đưa mAP@0.5 đạt mức xuất sắc **92.26%**.
+* **Đường bao trên đơn điệu PASCAL VOC**: Ngay khi mở rộng ngưỡng sang $k \ge 4$, đường cong vọt lên $0.98 - 0.99$ và duy trì đường nằm ngang hoàn hảo trên toàn bộ dải Recall từ $0.05$ đến $0.85$. Theo quy tắc làm trơn đường bao trên đơn điệu $P_{\text{interp}}(r) = \max_{\tilde{r} \ge r} P(\tilde{r})$, phần lõm cục bộ tại $r \le 0.005$ được làm phẳng hoàn toàn thành $0.99$, bảo toàn diện tích dưới đường cong AUC và đưa mAP@0.5 đạt mức xuất sắc **92.26%**.
 
 ### 7.6. Hướng Dẫn Tải và Sử Dụng Các Mô Hình Mới (Model_FP16)
 
@@ -478,39 +521,7 @@ python Model_FP16/anti_uav_model_fp16.py \
 
 ---
 
-## 8. Bộ Sưu Tập Hình Ảnh Khoa Học (Scientific Figures)
-
-| Sơ Đồ Kiến Trúc Tổng Thể CenterNet RGB | Cấu Trúc Kim Tự Tháp P2-FPN |
-| :---: | :---: |
-| ![Kiến Trúc Tổng Thể](assets/cau_truc_model.jpg) | ![Cấu Trúc P2-FPN](assets/FPN.jpg) |
-
-| Khối Phần Dư Pre-activation ResNet50v2 | Chuỗi Triplet Thời Gian (Visible RGB) |
-| :---: | :---: |
-| ![Khối Phần Dư ResNet50v2](assets/model_architecture.jpg) | ![Triplet Thời Gian](assets/fig1_rgb_temporal_triplet.jpg) |
-
-| Phân Bố Kích Thước Drone Trong Dataset | So Sánh Chú Ý: SE-Net vs Coordinate Attention |
-| :---: | :---: |
-| ![Phân Bố Kích Thước](assets/fig2_drone_scale_distribution.jpg) | ![So Sánh SE vs CA](assets/comparison.jpg) |
-
-| Chi Tiết Cơ Chế Coordinate Attention (CA) | Động Học Khắc Phục Hiện Tượng Dying ReLU |
-| :---: | :---: |
-| ![Cơ Chế CA](assets/CA.jpg) | ![Dying ReLU](assets/relu_dying.jpg) |
-
-| Bề Mặt Gaussian Heatmap & Giảm Chấn Mềm | Biểu Đồ Hội Tụ Hàm Mất Mát (Loss Curve) |
-| :---: | :---: |
-| ![Gaussian Heatmap](assets/gaussian.jpg) | ![Biểu Đồ Loss](assets/loss_curve.jpg) |
-
-| Đường Cong Precision - Recall (PR Curve) | Giải Mã Cực Đại Địa Phương MaxPool 3x3 |
-| :---: | :---: |
-| ![Đường Cong PR](assets/pr_curve.jpg) | ![Giải Mã Cực Đại](assets/LMD.jpg) |
-
-| Mẫu Dự Đoán Kiểm Thử Định Tính | So Sánh Phóng To Ground Truth vs Dự Báo |
-| :---: | :---: |
-| ![Mẫu Kiểm Thử](assets/fig_visual_test_samples.jpg) | ![So Sánh Bounding Box](assets/fig_gt_vs_pred_comparison.jpg) |
-
----
-
-## 9. Cấu Trúc Thư Mục Dự Án
+## 8. Cấu Trúc Thư Mục Dự Án
 
 ```
 .
@@ -552,7 +563,7 @@ python Model_FP16/anti_uav_model_fp16.py \
 │   │   └── test_demo_large_2_test_075.mp4   # Video gốc Drone Lớn 2
 │   ├── cau_truc_model.jpg         # Sơ đồ kiến trúc tổng thể CenterNet RGB
 │   ├── model_architecture.jpg     # Sơ đồ so sánh Residual Block v1 vs Pre-activation Residual Block v2
-│   ├── FPN.jpg                    # Cấu trúc kim tự tháp đặc trưng P2-FPN
+│   ├── FPN.jpg                    # Cấu trúc kim tự tháp đặc trưng FPN
 │   ├── comparison.jpg             # So sánh SE-Net vs Coordinate Attention
 │   ├── CA.jpg                     # Cơ chế Coordinate Attention
 │   ├── fig1_rgb_temporal_triplet.jpg
@@ -584,7 +595,7 @@ python Model_FP16/anti_uav_model_fp16.py \
 │   ├── models/                    # Kiến trúc mạng nơ-ron sâu
 │   │   ├── attention.py           # Triển khai lớp Coordinate Attention 1D
 │   │   ├── backbone.py            # Khung trích xuất đặc trưng ResNet50v2 Pre-activation
-│   │   ├── fpn.py                 # Mạng kim tự tháp P2-FPN đa tỉ lệ
+│   │   ├── fpn.py                 # Mạng kim tự tháp FPN đa tỉ lệ
 │   │   ├── centernet_head.py      # Ba đầu dự đoán Anchor-Free (Heatmap, Offset, Size)
 │   │   └── decoder.py             # Giải mã cực đại địa phương MaxPool 3x3 (NMS-Free)
 │   ├── tracking/                  # Theo dõi mục tiêu thời gian thực
@@ -602,7 +613,7 @@ python Model_FP16/anti_uav_model_fp16.py \
 
 ---
 
-## 10. Hướng Dẫn Cài Đặt và Khởi Chạy Nhanh
+## 9. Hướng Dẫn Cài Đặt và Khởi Chạy Nhanh
 
 ### Bước 1: Sao Chép Mã Nguồn và Thiết Lập Môi Trường
 ```bash
@@ -629,7 +640,7 @@ python weights/download_weights.py
 
 ---
 
-## 11. Hướng Dẫn Sử Dụng Giao Diện Dòng Lệnh (CLI)
+## 10. Hướng Dẫn Sử Dụng Giao Diện Dòng Lệnh (CLI)
 
 File `demo.py` hỗ trợ nhận diện tự động ảnh tĩnh, video, đường link URL trên mạng hoặc camera trực tiếp:
 
@@ -682,7 +693,7 @@ python train.py \
 
 ---
 
-## 12. Giấy Phép và Tài Liệu Tham Khảo
+## 11. Giấy Phép và Tài Liệu Tham Khảo
 
 Dự án này được phân phối dưới giấy phép mã nguồn mở [MIT License](LICENSE).
 
