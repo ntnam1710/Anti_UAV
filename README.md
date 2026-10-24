@@ -488,37 +488,6 @@ Dựa trên biểu đồ đối chứng trên, mô hình FP16 đạt 4 kết qu�
 * **Vết sụt nhọn tại điểm cắt cực hạn $k=3$**: Khi sắp xếp các dự đoán theo Confidence Score giảm dần, tại điểm cắt cực kỳ khắt khe chỉ lấy $k=3$ dự đoán có độ tin cậy cao nhất trên toàn bộ 3.000 khung hình, có 2 trường hợp dự đoán đúng (TP) và 1 trường hợp dự đoán nhầm (FP) do vi sai làm tròn số học ở định dạng 16-bit. Công thức tính Precision thô tại điểm này là $\text{Precision}(k=3) = \frac{2}{2+1} = \frac{2}{3} \approx 0.667$.
 * **Đường bao trên đơn điệu PASCAL VOC**: Ngay khi mở rộng ngưỡng sang $k \ge 4$, đường cong vọt lên $0.98 - 0.99$ và duy trì đường nằm ngang hoàn hảo trên toàn bộ dải Recall từ $0.05$ đến $0.85$. Theo quy tắc làm trơn đường bao trên đơn điệu $P_{\text{interp}}(r) = \max_{\tilde{r} \ge r} P(\tilde{r})$, phần lõm cục bộ tại $r \le 0.005$ được làm phẳng hoàn toàn thành $0.99$, bảo toàn diện tích dưới đường cong AUC và đưa mAP@0.5 đạt mức xuất sắc **92.26%**.
 
-### 7.6. Hướng Dẫn Tải và Sử Dụng Các Mô Hình Mới (Model_FP16)
-
-Toàn bộ các tệp trọng số mới đã được đóng gói và chia sẻ công khai trên Kaggle:
-* **Kaggle Dataset**: [namnguyen171006/uav-checkpoint](https://www.kaggle.com/datasets/namnguyen171006/uav-checkpoint)
-
-#### Danh Sách Tệp Mô Hình Sẵn Dùng:
-1. `Model_FP16/best_uav_model_fp16.tflite` (51.08 MB): Mô hình suy luận nhẹ thời gian thực 33.8 FPS.
-2. `Model_FP16/best_uav_model.onnx` (101.45 MB): Mô hình chuẩn hóa ONNX Opset 17 để nạp `trtexec` biên dịch TensorRT.
-3. `Model_FP16/best_uav_model_fp16.keras` (102.90 MB): Checkpoint Keras FP16 ổn định số học.
-
-#### Cách 1: Tải Tự Động Bằng Script Python
-```bash
-python Model_FP16/download_weights.py
-```
-
-#### Cách 2: Tải Bằng Kaggle CLI
-```bash
-kaggle datasets download -d namnguyen171006/uav-checkpoint -p Model_FP16/ --unzip
-```
-
-#### Khởi Chạy Script Đánh Giá Benchmark Toàn Diện:
-```bash
-python Model_FP16/anti_uav_model_fp16.py \
-    --voc_root "/duong/dan/den/VOC_AntiUAV_RGB" \
-    --val_csv "/duong/dan/den/val_triplets.csv" \
-    --checkpoint weights/best_uav_model.keras \
-    --batch_size 8 \
-    --stride 5 \
-    --samples 3000
-```
-
 ---
 
 ## 8. Cấu Trúc Thư Mục Dự Án
@@ -632,11 +601,36 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### Bước 2: Tải Trọng Số Đã Huấn Luyện Sẵn
+### Bước 2: Tải Trọng Số Mô Hình Huấn Luyện & Mô Hình Tối Ưu Hóa Biên
+
+Hệ thống cung cấp đầy đủ các phiên bản trọng số mô hình gốc (FP32 Keras) và các phiên bản tối ưu hóa cho thiết bị biên (FP16 TFLite, ONNX Opset 17, FP16 Keras) được lưu trữ công khai trên Kaggle:
+* **Kaggle Pretrained Weights & Edge Models**: [namnguyen171006/uav-checkpoint](https://www.kaggle.com/datasets/namnguyen171006/uav-checkpoint)
+
+#### Danh Mục Tệp Trọng Số Sẵn Dùng:
+| Tệp Mô Hình | Thư Mục | Định Dạng & Độ Chính Xác | Kích Thước | Mục Đích Sử Dụng |
+| :--- | :--- | :---: | :---: | :--- |
+| `best_uav_model.keras` | `weights/` | Keras HDF5 / FP32 | 102.80 MB | Trọng số huấn luyện gốc tối ưu, dùng cho huấn luyện tiếp hoặc suy luận chuẩn |
+| `best_uav_model_fp16.tflite` | `Model_FP16/` | TensorFlow Lite / FP16 | 51.08 MB | Suy luận siêu nhẹ trên CPU/GPU biên, tốc độ 33.8 FPS |
+| `best_uav_model.onnx` | `Model_FP16/` | ONNX Opset 17 / FP32 | 101.45 MB | Chuẩn hóa liên kết cross-framework, sẵn sàng nạp `trtexec` biên dịch TensorRT |
+| `best_uav_model_fp16.keras` | `Model_FP16/` | Keras / FP16 Mixed Precision | 102.90 MB | Checkpoint Keras bán chính xác bảo toàn trọng số |
+
+#### Cách 1: Tự Động Tải Bằng Kịch Bản Python (Khuyến Nghị)
 ```bash
+# Tải trọng số gốc FP32 vào thư mục weights/
 python weights/download_weights.py
+
+# Tải bộ mô hình biên FP16, ONNX và TFLite vào thư mục Model_FP16/
+python Model_FP16/download_weights.py
 ```
-*(Hoặc tải file `best_uav_model.keras` thủ công từ liên kết Kaggle và đặt vào thư mục `weights/`)*
+
+#### Cách 2: Tải Qua Kaggle CLI
+```bash
+# Tải về thư mục weights/
+kaggle datasets download -d namnguyen171006/uav-checkpoint -p weights/ --unzip
+
+# Tải về thư mục Model_FP16/
+kaggle datasets download -d namnguyen171006/uav-checkpoint -p Model_FP16/ --unzip
+```
 
 ---
 
@@ -691,14 +685,73 @@ python train.py \
     --lr 1e-4
 ```
 
+### 6. Đánh Giá Toàn Diện Mô Hình Lượng Tử Hóa FP16 và Xuất Khẩu ONNX / TFLite
+Chạy kịch bản `anti_uav_model_fp16.py` để thực thi toàn bộ pipeline: nạp mô hình gốc FP32, chuyển đổi sang Keras FP16, xuất khẩu định dạng ONNX Opset 17, chuyển đổi sang TensorFlow Lite FP16, và đo lường định lượng 11 chỉ số kiểm thử trên 3.000 frames:
+
+```bash
+python Model_FP16/anti_uav_model_fp16.py \
+    --voc_root "/duong/dan/den/VOC_AntiUAV_RGB" \
+    --val_csv "/duong/dan/den/VOC_AntiUAV_RGB/val_triplets.csv" \
+    --checkpoint weights/best_uav_model.keras \
+    --batch_size 8 \
+    --stride 5 \
+    --samples 3000
+```
+
+### 7. Biên Dịch và Tối Ưu Hóa TensorRT Engine Trên NVIDIA Jetson Nano
+Sau khi có tệp `best_uav_model.onnx`, khởi chạy tiện ích `trtexec` trực tiếp trên thiết bị Jetson Nano để biên dịch sang TensorRT Engine độc quyền:
+
+```bash
+trtexec --onnx=Model_FP16/best_uav_model.onnx \
+        --saveEngine=Model_FP16/best_uav_model_fp16.engine \
+        --fp16 \
+        --workspace=1024
+```
+
 ---
 
 ## 11. Giấy Phép và Tài Liệu Tham Khảo
 
-Dự án này được phân phối dưới giấy phép mã nguồn mở [MIT License](LICENSE).
+### 11.1. Giấy Phép Sử Dụng (License)
+* Dự án này được phân phối dưới giấy phép mã nguồn mở **[MIT License](LICENSE)**. Bạn hoàn toàn tự do sử dụng, chỉnh sửa và tích hợp cho các mục đích nghiên cứu học thuật và phát triển hệ thống phòng không dã chiến.
+* Bộ dữ liệu Anti-UAV tuân thủ nghiêm ngặt các quy định sử dụng dữ liệu phi thương mại của Ban tổ chức Ủy Ban Benchmark Anti-UAV.
 
-Tài liệu tham khảo học thuật chính:
-* Dữ liệu huấn luyện cung cấp bởi [**Ủy Ban Benchmark Anti-UAV**](https://github.com/ZhaoJ9014/Anti-UAV).
-* Cơ chế chú ý toạ độ dựa trên công trình: [Hou et al., "Coordinate Attention for Efficient Mobile Network Design", CVPR 2021](https://arxiv.org/abs/2103.02907).
-* Khoảng cách Wasserstein Gaussian chuẩn hoá dựa trên công trình: [Wang et al., "Normalized Gaussian Wasserstein Distance for Tiny Object Detection", 2021](https://arxiv.org/abs/2110.13389).
-* Nguyên lý Anchor-Free CenterNet dựa trên công trình: [Zhou et al., "Objects as Points", arXiv 2019](https://arxiv.org/abs/1904.07850).
+### 11.2. Tài Liệu Tham Khảo Học Thuật Cốt Lõi (Key Academic References)
+1. **Bộ Dữ Liệu và Benchmark Anti-UAV**:
+   * Zhao, J., Zhang, G., Yao, L., et al. (2021). *"The Anti-UAV Dataset and Benchmark"*. IEEE Transactions on Pattern Analysis and Machine Intelligence (TPAMI) / CVPR Workshop. [[Dataset Repository](https://github.com/ZhaoJ9014/Anti-UAV)].
+2. **Kiến Trúc Mạng Anchor-Free CenterNet**:
+   * Zhou, X., Wang, D., & Krähenbühl, P. (2019). *"Objects as Points"*. arXiv preprint arXiv:1904.07850. [[Paper Link](https://arxiv.org/abs/1904.07850)].
+3. **Độ Đo Khoảng Cách Wasserstein Chuẩn Hóa (NWD)**:
+   * Wang, J., Xu, C., Yang, W., & Yu, L. (2021). *"A Normalized Gaussian Wasserstein Distance for Tiny Object Detection"*. arXiv preprint arXiv:2110.13389. [[Paper Link](https://arxiv.org/abs/2110.13389)].
+4. **Cơ Chế Chú Ý Toạ Độ Không Gian (Coordinate Attention)**:
+   * Hou, Q., Zhou, D., & Feng, J. (2021). *"Coordinate Attention for Efficient Mobile Network Design"*. Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pp. 13713-13722. [[Paper Link](https://arxiv.org/abs/2103.02907)].
+5. **Mạng Xương Sống Phần Dư Pre-activation ResNet-v2**:
+   * He, K., Zhang, X., Ren, S., & Sun, J. (2016). *"Identity Mappings in Deep Residual Networks"*. European Conference on Computer Vision (ECCV), pp. 630-645. [[Paper Link](https://arxiv.org/abs/1603.05027)].
+6. **Mạng Kim Tự Tháp Đặc Trưng Đa Tỉ Lệ (Feature Pyramid Networks - FPN)**:
+   * Lin, T. Y., Dollár, P., Girshick, R., He, K., Hariharan, B., & Belongie, S. (2017). *"Feature Pyramid Networks for Object Detection"*. Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pp. 2117-2125. [[Paper Link](https://arxiv.org/abs/1612.03144)].
+7. **Hàm Mất Mát Gaussian Focal Loss Cho Keypoint Detection**:
+   * Lin, T. Y., Goyal, P., Girshick, R., He, K., & Dollár, P. (2017). *"Focal Loss for Dense Object Detection"*. IEEE International Conference on Computer Vision (ICCV), pp. 2980-2988.
+   * Law, H., & Deng, J. (2018). *"CornerNet: Detecting Objects as Paired Keypoints"*. European Conference on Computer Vision (ECCV), pp. 734-750.
+8. **Lượng Tử Hóa Mô Hình & Tối Ưu Hóa Thiết Bị Biên (Edge AI & Quantization)**:
+   * Jacob, B., Kligys, S., Chen, B., et al. (2018). *"Quantization and Training of Neural Networks for Efficient Integer-Arithmetic-Only Inference"*. CVPR, pp. 2704-2713.
+   * NVIDIA Corporation. (2023). *"NVIDIA TensorRT Developer Guide & Maxwell Architecture Optimization Manual"*. [[NVIDIA Docs](https://docs.nvidia.com/deeplearning/tensorrt/developer-guide/index.html)].
+   * Open Neural Network Exchange. (2023). *"ONNX Specification & Runtime Engine (Opset 17)"*. [[ONNX Documentation](https://onnx.ai/)].
+
+### 11.3. Nguồn Dữ Liệu và Trọng Số Đã Công Bố (Open Datasets & Models)
+* **Tập dữ liệu Anti-UAV Pascal VOC (Visible RGB)**: [Kaggle Dataset: anti-uav-rgb](https://www.kaggle.com/datasets/namnguyen171006/anti-uav-rgb)
+* **Kho lưu trữ trọng số và mô hình biên tối ưu**: [Kaggle Model Checkpoint: uav-checkpoint](https://www.kaggle.com/datasets/namnguyen171006/uav-checkpoint)
+  *(Bao gồm `best_uav_model.keras`, `best_uav_model_fp16.tflite`, `best_uav_model.onnx`, và `best_uav_model_fp16.keras`)*
+
+### 11.4. Trích Dẫn Dự Án (BibTeX Citation)
+Nếu bạn sử dụng mã nguồn, kiến trúc mạng, hoặc trọng số mô hình từ dự án này cho nghiên cứu của mình, vui lòng trích dẫn theo định dạng sau:
+
+```bibtex
+@misc{namnguyen2026antiuav,
+  author       = {Nguyen Trong Nam},
+  title        = {Real-Time Anti-UAV Detection and Tracking System via Anchor-Free CenterNet with Temporal Triplet, Coordinate Attention, and FP16 Quantization},
+  year         = {2026},
+  publisher    = {GitHub},
+  howpublished = {\url{https://github.com/ntnam1710/Anti_UAV}},
+  note         = {Pretrained weights available on Kaggle: uav-checkpoint}
+}
+```
