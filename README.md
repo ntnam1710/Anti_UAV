@@ -5,7 +5,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Kaggle Dataset](https://img.shields.io/badge/Kaggle%20Dataset-anti--uav--rgb-20BEFF?logo=kaggle&logoColor=white)](https://www.kaggle.com/datasets/namnguyen171006/anti-uav-rgb)
 [![Pretrained Weights](https://img.shields.io/badge/Kaggle%20Model-uav--checkpoint-orange?logo=kaggle&logoColor=white)](https://www.kaggle.com/datasets/namnguyen171006/uav-checkpoint)
-[![Inference Speed](https://img.shields.io/badge/Inference-21.4%20FPS%20(GPU)-success)](https://github.com)
+[![Inference Speed](https://img.shields.io/badge/Inference-33.8%20FPS%20(FP16)%20%7C%2021.4%20FPS%20(FP32)-success)](https://github.com)
+[![Model Size](https://img.shields.io/badge/Model%20Size-51.08%20MB%20(FP16)-blue)](https://github.com)
+[![Quantization](https://img.shields.io/badge/Quantization-FP16%20%7C%20ONNX%20%7C%20TensorRT-success)](https://github.com)
 
 ---
 
@@ -16,11 +18,12 @@
 4. [Kiến Trúc Mạng và Các Điểm Cải Tiến Cốt Lõi](#4-kiến-trúc-mạng-và-các-điểm-cải-tiến-cốt-lõi)
 5. [Cơ Sở Toán Học và Công Thức Thuật Toán](#5-cơ-sở-toán-học-và-công-thức-thuật-toán)
 6. [Kết Quả Thực Nghiệm và Quá Trình Hội Tụ Huấn Luyện](#6-kết-quả-thực-nghiệm-và-quá-trình-hội-tụ-huấn-luyện)
-7. [Bộ Sưu Tập Hình Ảnh Khoa Học](#7-bộ-sưu-tập-hình-ảnh-khoa-học-scientific-figures)
-8. [Cấu Trúc Thư Mục Dự Án](#8-cấu-trúc-thư-mục-dự-án)
-9. [Hướng Dẫn Cài Đặt và Khởi Chạy Nhanh](#9-hướng-dẫn-cài-đặt-và-khởi-chạy-nhanh)
-10. [Hướng Dẫn Sử Dụng Giao Diện Dòng Lệnh (CLI)](#10-hướng-dẫn-sử-dụng-giao-diện-dòng-lệnh-cli)
-11. [Giấy Phép và Tài Liệu Tham Khảo](#11-giấy-phép-và-tài-liệu-tham-khảo)
+7. [Nghiên Cứu Tối Ưu Hóa và Lượng Tử Hóa Mô Hình Cho Thiết Bị Biên (Model Quantization & Edge AI)](#7-nghiên-cứu-tối-ưu-hóa-và-lượng-tử-hóa-mô-hình-cho-thiết-bị-biên-model-quantization--edge-ai)
+8. [Bộ Sưu Tập Hình Ảnh Khoa Học](#8-bộ-sưu-tập-hình-ảnh-khoa-học-scientific-figures)
+9. [Cấu Trúc Thư Mục Dự Án](#9-cấu-trúc-thư-mục-dự-án)
+10. [Hướng Dẫn Cài Đặt và Khởi Chạy Nhanh](#10-hướng-dẫn-cài-đặt-và-khởi-chạy-nhanh)
+11. [Hướng Dẫn Sử Dụng Giao Diện Dòng Lệnh (CLI)](#11-hướng-dẫn-sử-dụng-giao-diện-dòng-lệnh-cli)
+12. [Giấy Phép và Tài Liệu Tham Khảo](#12-giấy-phép-và-tài-liệu-tham-khảo)
 
 ---
 
@@ -355,7 +358,127 @@ Mô hình được đánh giá định lượng độc lập trên **3.000 frame
 
 ---
 
-## 7. Bộ Sưu Tập Hình Ảnh Khoa Học (Scientific Figures)
+---
+
+## 7. Nghiên Cứu Tối Ưu Hóa và Lượng Tử Hóa Mô Hình Cho Thiết Bị Biên (Model Quantization & Edge AI)
+
+### 7.1. Đặt Vấn Đề Triển Khai Thiết Bị Biên và Giới Hạn Phần Cứng (NVIDIA Jetson Nano)
+Trong tác chiến phòng không tầm thấp, hệ thống đòi hỏi khả năng cơ động cao, tích hợp trực tiếp trên các trạm quan sát dã chiến hoặc phương tiện không người lái tuần tra. Thiết bị biên tiêu biểu trong phân khúc này là **NVIDIA Jetson Nano (4GB)**. 
+
+Tuy nhiên, việc triển khai mô hình học sâu CenterNet trên Jetson Nano gặp phải các rào cản phần cứng khắt khe:
+1. **Dung lượng và băng thông bộ nhớ eo hẹp**: Jetson Nano sở hữu CPU 4 nhân ARM Cortex-A57 @ 1.43 GHz, GPU 128 lõi Maxwell (compute capability 5.3) và bộ nhớ thống nhất (UMA) 4GB LPDDR4 64-bit chia sẻ chung giữa CPU, GPU và hệ điều hành Linux với băng thông chỉ **25.6 GB/s**.
+2. **Hiện tượng nghẽn băng thông bộ nhớ (Memory Bandwidth Bottleneck)**: Mô hình nguyên bản Full ResNet50v2 ở định dạng số thực 32-bit (FP32) chiếm **102.9 MB** dung lượng lưu trữ (26.96 triệu tham số). Khi nạp vào VRAM cùng với bộ đệm ánh xạ kích hoạt trung gian (activation buffers) qua các tầng FPN và 3 nhánh Head, mô hình chiếm dụng từ **1.5 GB đến 2.0 GB VRAM** (gần 50% tổng RAM vật lý). Việc liên tục đọc/ghi dữ liệu FP32 4 bytes qua bus 64-bit gây nghẽn băng thông nghiêm trọng, làm sụt giảm tốc độ suy luận dưới **15 FPS** và kích hoạt cơ chế bóp xung nhiệt độ (Thermal Throttling) trong giới hạn công suất 5W - 10W.
+
+Do đó, tối ưu hóa và lượng tử hóa mô hình là yêu cầu tiên quyết để hệ thống đạt tốc độ thời gian thực ($\ge 30	ext{ FPS}$) trên thiết bị biên.
+
+### 7.2. Khái Niệm, Cơ Chế Số Học IEEE 754 và Lý Do Chọn Bán Chính Xác FP16
+**Lượng tử hóa mô hình (Model Quantization)** là kỹ thuật chuyển đổi trọng số $\mathbf{W}$ và các bản đồ kích hoạt $\mathbf{A}$ từ định dạng số thực độ chính xác cao sang định dạng biểu diễn có số lượng bit thấp hơn.
+
+Theo chuẩn IEEE 754:
+* **FP32 (Single Precision, 32-bit)**: 1 bit dấu ($s$), 8 bit số mũ ($e$), 23 bit định trị ($m$). Dải động rộng từ $\pm 1.18 	imes 10^{-38}$ đến $\pm 3.4 	imes 10^{38}$.
+  $$v_{	ext{FP32}} = (-1)^s 	imes 2^{e - 127} 	imes \left(1 + \sum_{i=1}^{23} m_i 2^{-i}ight)$$
+* **FP16 (Half Precision, 16-bit)**: 1 bit dấu ($s$), 5 bit số mũ ($e$), 10 bit định trị ($m$). Dải động chuẩn hóa $[\pm 6.10 	imes 10^{-5}, \pm 65504]$, số dưới chuẩn xuống tới $5.96 	imes 10^{-8}$.
+  $$v_{	ext{FP16}} = (-1)^s 	imes 2^{e - 15} 	imes \left(1 + \sum_{i=1}^{10} m_i 2^{-i}ight)$$
+* **Đối chiếu INT8 (8-bit)**: Lượng tử hóa đều affine $q = 	ext{clip}(\lfloor r/S ceil + Z, -128, 127)$ chỉ có 256 mức rời rạc.
+
+**Lý Do Quyết Định Lựa Chọn FP16 (thay vì INT8):**
+1. **Bảo toàn độ nhạy Gaussian Heatmap cho micro-drone**: Nhánh dự đoán vị trí tâm drone mô hình hóa bằng phân bố Gauss $G(x, y) = \exp\left(-rac{(x-p_x)^2 + (y-p_y)^2}{2\sigma_p^2}ight)$. Với drone siêu nhỏ ($< 16	imes 16	ext{ px}$), bán kính $\sigma_p$ rất hẹp, giá trị xác suất ở vùng rìa tâm sụt cực nhanh về $10^{-3} - 10^{-4}$. Định dạng INT8 với bước lượng tử $\Delta pprox 0.0039$ sẽ làm tròn toàn bộ vùng này về 0, gây hiện tượng bẹt đỉnh phân bố và triệt tiêu khả năng phát hiện điểm cực đại cục bộ. FP16 bao quát trọn vẹn dải động học $(10^{-4} 	o 1.0)$, bảo toàn hình thái hàm Gauss.
+2. **Duy trì ổn định nhánh hồi quy kích thước Sigmoid Logit Prior**: Nhánh kích thước sử dụng $\hat{s} = \sigma(z)$ với bias khởi tạo $b_0 = -2.66$ ($s_0 = 0.065$). FP16 duy trì độ phân giải số học liên tục, ngăn ngừa hiện tượng cắt cụt biên và sai số lượng tử tích lũy.
+3. **Khai thác phần cứng GPU qua chỉ thị vector ghép đôi `half2`**: Kiến trúc GPU NVIDIA (kể cả Maxwell trên Jetson Nano và Turing/Ampere) hỗ trợ xử lý 2 phép tính số học FP16 trong cùng một chu kỳ xung nhịp qua chỉ thị vector ghép đôi `half2`, nhân đôi thông lượng tính toán lý thuyết so với FP32.
+4. **Giảm 50% dung lượng và băng thông**: Kích thước tệp giảm từ 102.9 MB xuống 51.08 MB mà không cần tập dữ liệu hiệu chuẩn phức tạp hay huấn luyện có nhận thức lượng tử (QAT).
+
+### 7.3. Nghiên Cứu Thực Nghiệm Cắt Bỏ Tầng C5 (Stage 4 Pruning) và Phân Tích Sự Sụp Đổ Mô Hình
+Trong mạng xương sống ResNet50v2, riêng Stage 4 ($C_5$) chiếm tới 14.96 triệu tham số ($pprox 60\%$ tham số backbone). Nhóm nghiên cứu đã thực nghiệm cắt bỏ hoàn toàn tầng $C_5$, chỉ dùng $C_2, C_3, C_4$ đưa vào FPN nhằm nén kích thước xuống 40.6 MB.
+
+**Bảng So Sánh Hiệu Năng 3 Mô Hình Thực Nghiệm:**
+
+| Cấu hình Mô hình | Kích thước | mAP@0.5 (%) | mAP@0.75 (%) | NWD-mAP (%) | Precision (%) | Recall (%) | F1-Score (%) | Center Err (px) | Latency (ms) | FPS |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Original Full ResNet50 FP32** | 102.9 MB | **92.23** | **50.78** | **86.42** | **99.66** | **93.08** | **96.26** | **6.60** | 40.24 | 24.9 |
+| **Pruned C4 ResNet FP32** | 40.6 MB | 45.21 | 7.40 | 33.04 | 99.44 | 55.90 | 71.57 | 11.25 | 34.52 | 29.0 |
+| **Pruned C4 ResNet FP16** | **40.6 MB** | 45.32 | 7.40 | 33.05 | 99.44 | 55.90 | 71.57 | 11.25 | **22.12** | **45.2** |
+
+**Nguyên Nhân Cốt Lõi Khiến Mô Hình Cắt Bỏ C5 Bị Sụp Đổ:**
+1. **Hiện tượng đói ngữ nghĩa tại đỉnh tháp FPN**: FPN dung hợp đặc trưng từ trên xuống (Top-down). Khi mất $C_5$, tầng đỉnh mới chỉ là $C_4$ (stride 16), các tầng phân giải cao $P_3, P_2$ phía dưới bị thiếu hụt nghiêm trọng đặc trưng ngữ nghĩa mức cao, mất khả năng phân biệt mục tiêu với nhiễu nền (đám mây, tán cây, chóp nhà).
+2. **Mất trường tiếp nhận (ERF) cho drone cự ly gần và cơ động nhanh**: Phân bố tập dữ liệu Anti-UAV cho thấy khoảng **29.7%** khung hình chứa drone ở cự ly gần hoặc cơ động nhanh ($32	imes 32$ đến $> 96	imes 96	ext{ px}$). $C_4$ không bao quát được toàn bộ cấu trúc drone, khiến **mAP@0.75 sụp đổ từ 50.78% xuống còn 7.40% (mất 85.4%)**.
+3. **Độ bao quát Recall tụt dốc thê thảm**: Recall giảm từ 93.08% xuống 55.90%, tỷ lệ bỏ sót drone lên tới **44.1%**. Dù Precision đạt 99.44%, điều này chỉ cho thấy mô hình trở nên quá cực đoan: chỉ dám phát hiện khi mục tiêu cực kỳ rõ ràng, bỏ qua gần một nửa số lượng mục tiêu thực tế. Sai số tâm tăng từ 6.60 px lên 11.25 px (+70.5%).
+4. **Lượng tử hóa FP16 không thể phục hồi kiến trúc bị khuyết tật**: Khi lượng tử hóa Pruned C4 sang FP16, mAP@0.5 vẫn chỉ đạt 45.32%, chứng minh sự sụp đổ bắt nguồn từ khiếm khuyết biểu diễn không gian - ngữ nghĩa của backbone chứ không phải sai số số học.
+
+**Kết luận kỹ thuật**: Giữ nguyên kiến trúc **Full ResNet50v2 đầy đủ 4 Stages** ($C_2, C_3, C_4, C_5$) và áp dụng lượng tử hóa bán chính xác FP16 để giảm dung lượng bộ nhớ.
+
+### 7.4. Khung Triển Khai Biên: TensorRT vs TensorFlow Lite và Vai Trò của Chuẩn ONNX
+* **NVIDIA TensorRT -- Đích đến tối ưu tuyệt đối cho Jetson Nano**: TensorRT khai thác trực tiếp vi kiến trúc GPU Maxwell qua 4 cơ chế:
+  1. *Layer & Tensor Fusion*: Gộp các tầng liên tiếp (Conv + BN + CA + Sigmoid) thành một CUDA kernel đơn lẻ, triệt tiêu đọc/ghi VRAM trung gian (Zero-memory roundtrip).
+  2. *Kernel Auto-Tuning*: Tự động đo đạc và chọn thuật toán tích chập nhanh nhất (Direct GEMM, Winograd, FFT) trên vi kiến trúc Maxwell của Jetson Nano.
+  3. *Dynamic Memory Allocation*: Tối ưu hóa phân bổ bộ nhớ đệm chia sẻ cấp byte cho kiến trúc Unified Memory của Tegra.
+  4. *Hỗ trợ số học FP16 phần cứng*: Tận dụng tối đa tập lệnh vector `half2`.
+* **Lý do sử dụng TensorFlow Lite trong giai đoạn kiểm chứng**: Tệp TensorRT Engine (`.engine`) phụ thuộc chặt chẽ vào vi kiến trúc phần cứng (không thể biên dịch trên GPU máy chủ Cloud như Tesla T4/P100 rồi đem chạy trên Maxwell Jetson Nano). TFLite FP16 Converter cung cấp môi trường kiểm chứng số học độc lập phần cứng (Hardware-Agnostic Arithmetic Verification) trên Cloud nhằm phát hiện sớm các nguy cơ tràn số hoặc suy hao phân phối trước khi nạp thiết bị.
+* **Vai trò trung tâm của định dạng chuẩn ONNX**: ONNX đóng vai trò là chiếc cầu nối vạn năng chuẩn công nghiệp (Opset 17) kết nối giữa môi trường huấn luyện Keras và trình biên dịch TensorRT:
+  $$\text{Keras FP32 Model (.keras)} \xrightarrow[\text{Opset 17}]{\text{tf2onnx}} \text{ONNX Model (.onnx)} \xrightarrow[\text{Maxwell sm\_53}]{\text{trtexec --fp16}} \text{TensorRT Engine (.engine)}$$
+  Tệp ONNX đã được xuất khẩu hoàn chỉnh: `Model_FP16/best_uav_model.onnx` (101.45 MB, Opset 17), sẵn sàng biên dịch trực tiếp trên Jetson Nano:
+  ```bash
+  trtexec --onnx=best_uav_model.onnx --saveEngine=best_uav_model_fp16.engine --fp16
+  ```
+
+### 7.5. Đánh Giá Định Lượng Toàn Diện Mô Hình FP16 và Phân Tích Biểu Đồ Đối Chứng
+Dựa trên tệp nhật ký thực nghiệm `Model_FP16/model_fp16_benchmark_summary.txt`, mô hình gốc Full ResNet50 FP32 và mô hình lượng tử hóa bán chính xác Full ResNet50 FP16 được đánh giá đối chứng toàn diện trên cùng 3.000 khung hình kiểm thử tiêu biểu của bộ dữ liệu Anti-UAV:
+
+| Chỉ Số Đánh Giá (Metric) | Original Full ResNet50 FP32 | Original Full ResNet50 FP16 | Biến Thiên / Ý Nghĩa Kỹ Thuật |
+| :--- | :---: | :---: | :--- |
+| **Kích thước mô hình (Size)** | $102.90\text{ MB}$ | $\mathbf{51.08\text{ MB}}$ | **Giảm 50.36%** (Tiết kiệm $51.82\text{ MB}$) |
+| **mAP@0.5 (IoU)** | $92.23\%$ | $\mathbf{92.26\%}$ | **+0.03%** (Bảo toàn tuyệt đối độ chính xác) |
+| **mAP@0.75 (IoU)** | $\mathbf{50.78\%}$ | $49.45\%$ | -1.33% (Sai khác số học vi mô không đáng kể) |
+| **NWD-mAP@0.5 (NWD)** | $\mathbf{86.42\%}$ | $\mathbf{86.42\%}$ | **0.00%** (Độ định vị drone siêu nhỏ nguyên vẹn) |
+| **Precision** | $\mathbf{99.66\%}$ | $96.56\%$ | -3.10% (Duy trì độ chính xác cao $> 96.5\%$) |
+| **Recall** | $\mathbf{93.08\%}$ | $92.99\%$ | -0.09% (Độ bao quát mục tiêu tương đương tuyệt đối) |
+| **F1-Score** | $\mathbf{96.26\%}$ | $94.74\%$ | -1.52% (Cân bằng điều hòa tối ưu) |
+| **Sai số tâm trung bình (Center Error)** | $\mathbf{6.60\text{ px}}$ | $6.94\text{ px}$ | +0.34 px (Độ lệch ngắm chỉ $0.34\text{ pixel}$) |
+| **Độ trễ suy luận (Latency)** | $40.24\text{ ms}$ | $\mathbf{29.61\text{ ms}}$ | **Giảm 26.42%** (Nhanh hơn $10.63\text{ ms}$/frame) |
+| **Tốc độ khung hình (FPS)** | $24.9\text{ FPS}$ | $\mathbf{33.8\text{ FPS}}$ | **Tăng 35.74%** (Vượt chuẩn thời gian thực $> 30\text{ FPS}$) |
+
+| Biểu Đồ Đối Chứng 4 Thành Phần FP32 vs FP16 | Đường Cong Precision - Recall Mô Hình FP16 |
+| :---: | :---: |
+| ![Biểu Đồ Đối Chứng FP16](assets/model_fp16_comparison_charts.png) | ![Đường Cong PR FP16](assets/pr_curve_full_resnet50_fp16.png) |
+| *Hình 1: So sánh 4 khía cạnh: Dung lượng mô hình (MB), Tốc độ suy luận (FPS), Độ chính xác mAP@0.5 & NWD-mAP (%), Sai số tâm ngắm (pixels).* | *Hình 2: Đường cong PR của mô hình Full ResNet50 FP16 (mAP@0.5 = 92.26%, Precision = 96.56%, Recall = 92.99%).* |
+
+**Phân Tích Chuyên Sâu Đồ Thị PR Curve Của FP16:**
+* **Vết sụt nhọn tại điểm cắt cực hạn $k=3$**: Khi sắp xếp các dự đoán theo Confidence Score giảm dần, tại điểm cắt cực kỳ khắt khe chỉ lấy $k=3$ dự đoán có độ tin cậy cao nhất trên toàn bộ 3.000 khung hình, có 2 trường hợp dự đoán đúng (TP) và 1 trường hợp dự đoán nhầm (FP) do vi sai làm tròn số học ở định dạng 16-bit. Công thức tính Precision thô tại điểm này là $\text{Precision}(k=3) = \frac{2}{2+1} = \frac{2}{3} \approx 0.667$.
+* **Đường bao trên đơn điệu PASCAL VOC**: Ngay khi mở rộng ngưỡng sang $k \ge 4$, đường cong vọt lên $0.98 - 0.99$ và duy trì đường nằm ngang hoàn hảo trên toàn bộ dải Recall từ $0.05$ đến $0.85$. Theo quy tắc Monotonic Upper Envelope Interpolation $P_{\text{interp}}(r) = \max_{\tilde{r} \ge r} P(\tilde{r})$, phần lõm cục bộ tại $r \le 0.005$ được làm phẳng hoàn toàn thành $0.99$, bảo toàn diện tích dưới đường cong AUC và đưa mAP@0.5 đạt mức xuất sắc **92.26%**.
+
+### 7.6. Hướng Dẫn Tải và Sử Dụng Các Mô Hình Mới (Model_FP16)
+
+Toàn bộ các tệp trọng số mới đã được đóng gói và chia sẻ công khai trên Kaggle:
+* **Kaggle Dataset**: [namnguyen171006/uav-checkpoint](https://www.kaggle.com/datasets/namnguyen171006/uav-checkpoint)
+
+#### Danh Sách Tệp Mô Hình Sẵn Dùng:
+1. `Model_FP16/best_uav_model_fp16.tflite` (51.08 MB): Mô hình suy luận nhẹ thời gian thực 33.8 FPS.
+2. `Model_FP16/best_uav_model.onnx` (101.45 MB): Mô hình chuẩn hóa ONNX Opset 17 để nạp `trtexec` biên dịch TensorRT.
+3. `Model_FP16/best_uav_model_fp16.keras` (102.90 MB): Checkpoint Keras FP16 ổn định số học.
+
+#### Cách 1: Tải Tự Động Bằng Script Python
+```bash
+python Model_FP16/download_weights.py
+```
+
+#### Cách 2: Tải Bằng Kaggle CLI
+```bash
+kaggle datasets download -d namnguyen171006/uav-checkpoint -p Model_FP16/ --unzip
+```
+
+#### Khởi Chạy Script Đánh Giá Benchmark Toàn Diện:
+```bash
+python Model_FP16/anti_uav_model_fp16.py \
+    --voc_root "/duong/dan/den/VOC_AntiUAV_RGB" \
+    --val_csv "/duong/dan/den/val_triplets.csv" \
+    --checkpoint weights/best_uav_model.keras \
+    --batch_size 8 \
+    --stride 5 \
+    --samples 3000
+```
+
+---
+
+## 8. Bộ Sưu Tập Hình Ảnh Khoa Học (Scientific Figures)
 
 | Sơ Đồ Kiến Trúc Tổng Thể CenterNet RGB | Cấu Trúc Kim Tự Tháp P2-FPN |
 | :---: | :---: |
@@ -387,7 +510,7 @@ Mô hình được đánh giá định lượng độc lập trên **3.000 frame
 
 ---
 
-## 8. Cấu Trúc Thư Mục Dự Án
+## 9. Cấu Trúc Thư Mục Dự Án
 
 ```
 .
@@ -399,10 +522,21 @@ Mô hình được đánh giá định lượng độc lập trên **3.000 frame
 ├── evaluate.py                    # Kịch bản đánh giá định lượng (mAP, Precision, Recall, NWD)
 ├── demo.py                        # Kịch bản suy luận thời gian thực và Tactical HUD
 ├── config.py                      # Chuyển tiếp cấu hình hệ thống
-├── report_anti_uav_centernet.tex  # Báo cáo khoa học định dạng LaTeX chuẩn mực
-├── report_anti_uav_centernet.pdf  # Báo cáo khoa học đã biên dịch (24 trang đầy đủ hình ảnh)
+│
+├── Model_FP16/                    # Nhánh tối ưu hóa, lượng tử hóa FP16 và triển khai biên
+│   ├── anti_uav_model_fp16.ipynb  # Sổ tay Jupyter thử nghiệm lượng tử hóa và benchmark
+│   ├── anti_uav_model_fp16.py     # Script Python thực thi lượng tử hóa, xuất ONNX và benchmark
+│   ├── download_weights.py        # Tự động tải các trọng số FP16/ONNX từ Kaggle
+│   ├── README.md                  # Hướng dẫn chi tiết sử dụng các mô hình FP16
+│   └── model_fp16_benchmark_summary.txt # Nhật ký kết quả định lượng benchmark
+│
+├── Report/                        # Báo cáo khoa học kỹ thuật chi tiết
+│   ├── report_anti_uav_centernet.tex  # Báo cáo khoa học định dạng LaTeX chuẩn mực
+│   └── report_anti_uav_centernet.pdf  # Báo cáo khoa học đã biên dịch (34 trang đầy đủ hình ảnh)
 │
 ├── assets/                        # Toàn bộ hình ảnh khoa học, biểu đồ và video thử nghiệm
+│   ├── model_fp16_comparison_charts.png  # Biểu đồ đối chứng 4 thành phần FP32 vs FP16
+│   ├── pr_curve_full_resnet50_fp16.png   # Đường cong Precision-Recall mô hình FP16
 │   ├── demo_videos/               # 6 video demo tác chiến (kèm ảnh động GIF và video MP4)
 │   │   ├── test_demo_small_1_test_054.gif   # Ảnh động GIF Drone Nhỏ 1 (Sequence test_054)
 │   │   ├── test_demo_small_1_test_054.mp4   # Video gốc Drone Nhỏ 1
@@ -468,7 +602,7 @@ Mô hình được đánh giá định lượng độc lập trên **3.000 frame
 
 ---
 
-## 9. Hướng Dẫn Cài Đặt và Khởi Chạy Nhanh
+## 10. Hướng Dẫn Cài Đặt và Khởi Chạy Nhanh
 
 ### Bước 1: Sao Chép Mã Nguồn và Thiết Lập Môi Trường
 ```bash
@@ -495,7 +629,7 @@ python weights/download_weights.py
 
 ---
 
-## 10. Hướng Dẫn Sử Dụng Giao Diện Dòng Lệnh (CLI)
+## 11. Hướng Dẫn Sử Dụng Giao Diện Dòng Lệnh (CLI)
 
 File `demo.py` hỗ trợ nhận diện tự động ảnh tĩnh, video, đường link URL trên mạng hoặc camera trực tiếp:
 
@@ -548,7 +682,7 @@ python train.py \
 
 ---
 
-## 11. Giấy Phép và Tài Liệu Tham Khảo
+## 12. Giấy Phép và Tài Liệu Tham Khảo
 
 Dự án này được phân phối dưới giấy phép mã nguồn mở [MIT License](LICENSE).
 

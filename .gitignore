@@ -12,9 +12,14 @@ weights/*.h5
 
 # Outputs and caches
 outputs/
+Model_FP16_Outputs/
 temp_downloads/
 *.avi
 *_raw.mp4
+
+# Slide bao cao va tai lieu nghien cuu rieng
+Báo_Cáo.pptx
+DroneDetectionArticle/
 
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints
