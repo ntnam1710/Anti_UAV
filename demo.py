@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Kịch bản thực thi suy luận (Inference) cho mô hình CenterNet RGB phát hiện và bám bắt UAV.
+File code thực thi suy luận (Inference) cho mô hình CenterNet RGB phát hiện và bám bắt UAV.
 Hỗ trợ:
 - Tệp ảnh cục bộ hoặc đường dẫn URL ảnh từ xa
 - Tệp video cục bộ hoặc đường dẫn URL video từ xa

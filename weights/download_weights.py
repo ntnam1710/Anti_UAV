@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Kịch bản hỗ trợ tự động tải trọng số tiền huấn luyện best_uav_model.keras từ Kaggle.
+File code hỗ trợ tự động tải trọng số tiền huấn luyện best_uav_model.keras từ Kaggle.
 """
 import os
 import sys

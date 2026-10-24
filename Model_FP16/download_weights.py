@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Kich ban ho tro tu dong tai cac tep trong so moi (TFLite FP16, ONNX, Keras FP16) tu Kaggle Dataset.
+File code ho tro tu dong tai cac tep trong so moi (TFLite FP16, ONNX, Keras FP16) tu Kaggle Dataset.
 Dataset: namnguyen171006/uav-checkpoint
 """
 

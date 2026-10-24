@@ -498,14 +498,14 @@ Dựa trên biểu đồ đối chứng trên, mô hình FP16 đạt 4 kết qu�
 ├── LICENSE                        # Giấy phép mã nguồn mở MIT
 ├── requirements.txt               # Danh sách thư viện phụ thuộc Python
 ├── .gitignore                     # Cấu hình bỏ qua file tạm và weights lớn
-├── train.py                       # Kịch bản huấn luyện mô hình đa nhiệm
-├── evaluate.py                    # Kịch bản đánh giá định lượng (mAP, Precision, Recall, NWD)
-├── demo.py                        # Kịch bản suy luận thời gian thực và Tactical HUD
+├── train.py                       # File code huấn luyện mô hình đa nhiệm
+├── evaluate.py                    # File code đánh giá định lượng (mAP, Precision, Recall, NWD)
+├── demo.py                        # File code suy luận thời gian thực và Tactical HUD
 ├── config.py                      # Chuyển tiếp cấu hình hệ thống
 │
 ├── Model_FP16/                    # Nhánh tối ưu hóa, lượng tử hóa FP16 và triển khai biên
 │   ├── anti_uav_model_fp16.ipynb  # Sổ tay Jupyter thử nghiệm lượng tử hóa và benchmark
-│   ├── anti_uav_model_fp16.py     # Script Python thực thi lượng tử hóa, xuất ONNX và benchmark
+│   ├── anti_uav_model_fp16.py     # File code Python thực thi lượng tử hóa, xuất ONNX và benchmark
 │   ├── download_weights.py        # Tự động tải các trọng số FP16/ONNX từ Kaggle
 │   ├── README.md                  # Hướng dẫn chi tiết sử dụng các mô hình FP16
 │   └── model_fp16_benchmark_summary.txt # Nhật ký kết quả định lượng benchmark
@@ -577,7 +577,7 @@ Dựa trên biểu đồ đối chứng trên, mô hình FP16 đạt 4 kết qu�
 └── weights/                       # Trọng số mô hình và nhật ký huấn luyện
     ├── best_uav_model.keras       # Trọng số tiền huấn luyện tối ưu (~102.8 MB)
     ├── training_history.csv       # Nhật ký số liệu huấn luyện qua 9 epochs
-    └── download_weights.py        # Script tự động tải trọng số từ Kaggle
+    └── download_weights.py        # File code tự động tải trọng số từ Kaggle
 ```
 
 ---
@@ -614,7 +614,7 @@ Hệ thống cung cấp đầy đủ các phiên bản trọng số mô hình g�
 | `best_uav_model.onnx` | `Model_FP16/` | ONNX Opset 17 / FP32 | 101.45 MB | Chuẩn hóa liên kết cross-framework, sẵn sàng nạp `trtexec` biên dịch TensorRT |
 | `best_uav_model_fp16.keras` | `Model_FP16/` | Keras / FP16 Mixed Precision | 102.90 MB | Checkpoint Keras bán chính xác bảo toàn trọng số |
 
-#### Cách 1: Tự Động Tải Bằng Kịch Bản Python (Khuyến Nghị)
+#### Cách 1: Tự Động Tải Bằng File Code Python (Khuyến Nghị)
 ```bash
 # Tải trọng số gốc FP32 vào thư mục weights/
 python weights/download_weights.py
@@ -686,7 +686,7 @@ python train.py \
 ```
 
 ### 6. Đánh Giá Toàn Diện Mô Hình Lượng Tử Hóa FP16 và Xuất Khẩu ONNX / TFLite
-Chạy kịch bản `anti_uav_model_fp16.py` để thực thi toàn bộ pipeline: nạp mô hình gốc FP32, chuyển đổi sang Keras FP16, xuất khẩu định dạng ONNX Opset 17, chuyển đổi sang TensorFlow Lite FP16, và đo lường định lượng 11 chỉ số kiểm thử trên 3.000 frames:
+Chạy file code `anti_uav_model_fp16.py` để thực thi toàn bộ pipeline: nạp mô hình gốc FP32, chuyển đổi sang Keras FP16, xuất khẩu định dạng ONNX Opset 17, chuyển đổi sang TensorFlow Lite FP16, và đo lường định lượng 11 chỉ số kiểm thử trên 3.000 frames:
 
 ```bash
 python Model_FP16/anti_uav_model_fp16.py \
@@ -741,17 +741,3 @@ trtexec --onnx=Model_FP16/best_uav_model.onnx \
 * **Tập dữ liệu Anti-UAV Pascal VOC (Visible RGB)**: [Kaggle Dataset: anti-uav-rgb](https://www.kaggle.com/datasets/namnguyen171006/anti-uav-rgb)
 * **Kho lưu trữ trọng số và mô hình biên tối ưu**: [Kaggle Model Checkpoint: uav-checkpoint](https://www.kaggle.com/datasets/namnguyen171006/uav-checkpoint)
   *(Bao gồm `best_uav_model.keras`, `best_uav_model_fp16.tflite`, `best_uav_model.onnx`, và `best_uav_model_fp16.keras`)*
-
-### 11.4. Trích Dẫn Dự Án (BibTeX Citation)
-Nếu bạn sử dụng mã nguồn, kiến trúc mạng, hoặc trọng số mô hình từ dự án này cho nghiên cứu của mình, vui lòng trích dẫn theo định dạng sau:
-
-```bibtex
-@misc{namnguyen2026antiuav,
-  author       = {Nguyen Trong Nam},
-  title        = {Real-Time Anti-UAV Detection and Tracking System via Anchor-Free CenterNet with Temporal Triplet, Coordinate Attention, and FP16 Quantization},
-  year         = {2026},
-  publisher    = {GitHub},
-  howpublished = {\url{https://github.com/ntnam1710/Anti_UAV}},
-  note         = {Pretrained weights available on Kaggle: uav-checkpoint}
-}
-```

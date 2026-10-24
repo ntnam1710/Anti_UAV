@@ -1,6 +1,6 @@
 # Huong Dan Su Dung Cac Mo Hinh Luong Tu Hoa va Toi Uu Bien (Model_FP16)
 
-Thu muc nay chua ma nguon thuc nghiem, kich ban chuyen doi va cac mo hinh da duoc toi uu hoa luong tu hoa ban chinh xac FP16 phuc vu trien khai tren thiet bi bien nhung nhu NVIDIA Jetson Nano / Orin Nano.
+Thu muc nay chua ma nguon thuc nghiem, file code chuyen doi va cac mo hinh da duoc toi uu hoa luong tu hoa ban chinh xac FP16 phuc vu trien khai tren thiet bi bien nhung nhu NVIDIA Jetson Nano / Orin Nano.
 
 ## 1. Danh Sach Cac Mo Hinh va Dinh Dang
 
@@ -13,7 +13,7 @@ Thu muc nay chua ma nguon thuc nghiem, kich ban chuyen doi va cac mo hinh da duo
 
 2. **best_uav_model.onnx (101.45 MB):**
    * Dinh dang: Open Neural Network Exchange (ONNX Opset 17).
-   * Dac tinh: Chuan hoa toan bo do thi tinh toan cua CenterNet (Coordinate Attention, P2-FPN, 3 nhanh Head).
+   * Dac tinh: Chuan hoa toan bo do thi tinh toan cua CenterNet (Coordinate Attention, FPN, 3 nhanh Head).
    * Muc dich: Dong vai tro cau noi van nang de bien dich sang NVIDIA TensorRT Engine tren Jetson Nano.
    * Lenh bien dich TensorRT Engine FP16 tren Jetson Nano:
      ```bash
@@ -29,7 +29,7 @@ Thu muc nay chua ma nguon thuc nghiem, kich ban chuyen doi va cac mo hinh da duo
 Cac tep trong so tren da duoc dong goi va chia se cong khai tai Kaggle Dataset:
 * Link Kaggle: https://www.kaggle.com/datasets/namnguyen171006/uav-checkpoint
 
-Cach 1: Tai tu dong bang script Python:
+Cach 1: Tai tu dong bang file code Python:
 ```bash
 python Model_FP16/download_weights.py
 ```
@@ -41,7 +41,7 @@ kaggle datasets download -d namnguyen171006/uav-checkpoint -p Model_FP16/ --unzi
 
 ## 3. Huong Dan Chay Thuc Nghiem va Danh Gia Benchmark
 
-Chay kich ban Python tuong duong so tay Jupyter:
+Chay file code Python tuong duong so tay Jupyter:
 ```bash
 python Model_FP16/anti_uav_model_fp16.py \
     --voc_root "/duong/dan/den/VOC_AntiUAV_RGB" \
